@@ -1,12 +1,12 @@
 
-import ev3dev.ev3 as ev3 
-import time 
-import utilities as util 
+import ev3dev.ev3 as ev3
+import time
+import utilities as util
 
 
 def find_nearest(polarity='normal'):
   """
-	takes `normal` or `invesed` as arguments
+  takes `normal` or `invesed` as arguments
   """
   sonar = ev3.UltrasonicSensor(ev3.INPUT_4)
   motor = ev3.MediumMotor('outA')
@@ -29,7 +29,7 @@ def find_nearest(polarity='normal'):
 	print(min_pos, min_sonar_val, '*')
     else:
 	print(motor.position, sonar.value())
-    t_now = util.timestamp_now() # break condition  
+    t_now = util.timestamp_now() # break condition
     if (t_now - t_start > 1E3):
       print ("im done")
       motor.stop()
@@ -38,15 +38,14 @@ def find_nearest(polarity='normal'):
   time.sleep(1) # sleep 1 sec
   delta = motor.position - min_pos
   #motor.position_sp = delta
-  while abs(motor.position-min_pos) > 1:  
+  while abs(motor.position-min_pos) > 1:
   	motor.run_to_abs_pos(position_sp = min_pos)
   print(delta)
   print(min_pos)
   print(motor.position)
   print(motor.state)
   motor.stop
-      
+
 def rotateAndSense_Bounce():
   rotateAndSense('normal')
   rotateAndSense('inversed')
-

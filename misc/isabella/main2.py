@@ -10,7 +10,24 @@ import utilities
 import openLoopControl as olc
 
 print('welcome to e v 3')
-
+m = ev3.LargeMotor(ev3.OUTPUT_A)
+m1 = ev3.LargeMotor(ev3.OUTPUT_C)
+m.connected
+m1.connected
+while True:
+	print m.position
+	m.run_timed()
+	m1.run_timed()
+# g = ev3.GyroSensor()
+# g.connected
+# g.mode = 'GYRO-ANG'
+# print 'initial g value'
+# print g.value()
+# time.sleep(1)
+# m.run_timed(duty_cycle_sp=50,time_sp=1000)
+# time.sleep(1)
+# print 'final value'
+# print g.value()
 #tutorial.operateWheelsBasic()
 
 #o = olc.openLoopControl()
@@ -22,7 +39,7 @@ print('welcome to e v 3')
 #time.sleep(3)
 
 #lab2.find_nearest('normal')
-
+"""
 col = ev3.ColorSensor(ev3.INPUT_3)
 motL = ev3.LargeMotor(ev3.OUTPUT_A)
 motR = ev3.LargeMotor(ev3.OUTPUT_C)
@@ -39,7 +56,7 @@ while True:
 	else:
 		motL.run_timed(duty_cycle_sp=20, time_sp=10)
 
-"""
+
 while True:
 	status = None
 	col_val = col.value()

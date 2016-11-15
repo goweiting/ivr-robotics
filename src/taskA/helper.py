@@ -17,10 +17,7 @@ def forward(time_sp):
     motA.run_timed(time_sp=time_sp)
     motB.run_timed(time_sp=time_sp)
 
-    # logging.info('DONE')
-
 def adjust(time_sp, correction):
-    penalty_weight = 1.2 # if the robot strays off towards the white
     if correction == 0:
         pass
     elif correction > 0:
@@ -28,7 +25,7 @@ def adjust(time_sp, correction):
         turn_left(time_sp, abs(correction))
     elif correction < 0:
         # More black than expected
-        turn_right(time_sp, abs(correction*penalty_weight))
+        turn_right(time_sp, abs(correction))
 
 
 def turn_right(time_sp, correction):
@@ -43,6 +40,7 @@ def turn_right(time_sp, correction):
     mot.run_timed(time_sp=time_sp)
     logging.info('TURN RIGHT, duty = {}'.format(new))
     mot.duty_cycle_sp = prev
+
 
 def turn_left(time_sp, correction):
     # Speed up left motor to turn left

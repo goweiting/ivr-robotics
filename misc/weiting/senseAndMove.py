@@ -6,8 +6,8 @@ import ev3dev.ev3 as ev3
 import time
 import logging
 
-logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
+# logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
+#                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 
 
 def forward_black(time_sp):
@@ -56,9 +56,7 @@ def follow_black_line(movement_saccard):
     """
     global col, motA, motB
     state = None
-    value = col.value()
-    if value <= 6:
-        state = 'BLACK'
+    value = col.value()print()
         forward_black(movement_saccard)
     elif value >= 7 and value <= 15 :
         state = 'EDGES'

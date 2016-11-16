@@ -1,12 +1,11 @@
-"""
-In task B: Following a broken line
-Follow a series of 4 line segments in a left-right pattern as shown. Roboto will start on one line and drive along it before switching to the other line.
+#! /usr/bin/env python
 
-GOAL:
-- For the robot to find its way to the end.
-- Have robot speak its current state when switching lines: 'I have reached the end of the line and will search on the right for the next line', for example
-
-"""
+# In task B: Following a broken line
+# Follow a series of 4 line segments in a left-right pattern as shown. Roboto will start on one line and drive along it before switching to the other line.
+#
+# GOAL:
+# - For the robot to find its way to the end.
+# - Have robot speak its current state when switching lines: 'I have reached the end of the line and will search on the right for the next line', for example
 
 import logging
 import time
@@ -20,7 +19,7 @@ logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
                     level=logging.DEBUG)
 
-ev3.Sound.speak('This is task B! I really c b a ugh').wait()
+ev3.Sound.speak('This is task B').wait()
 motA = io.motA
 motB = io.motB
 gyro = io.gyro
@@ -50,7 +49,7 @@ WHITE = 62 # io.col.value() # approx 50
 logging.info('WHITE = {}'.format(WHITE))
 time.sleep(1) # wait for 1 seconds
 
-ev3.Sound.speak('Black').wait()
+# ev3.Sound.speak('Black').wait()
 BLACK = 6 #io.col.value() # approv 6
 logging.info('BLACK = {}'.format(BLACK))
 
@@ -58,127 +57,191 @@ logging.info('BLACK = {}'.format(BLACK))
 # MIDDLE = io.col.value()
 # logging.info('MID = {}'.format(MIDDLE))
 
-MIDPOINT = (WHITE - BLACK) / 2  + BLACK # approx 28
+# smaller than task A because this is now more sensitive to white colour
+MIDPOINT = (WHITE - BLACK) / 2  + BLACK - 20 # approx 28 - 10
 logging.info('MIDPOINT = {}'.format(MIDPOINT))
-# ev3.Sound.speak('Calibartion completed').wait()
 
-# ----------------------------------
-#  PID CONTROL
-# ----------------------------------
-# 'command', 'commands', 'connected', 'count_per_rot', 'device_index', 'driver_name', 'duty_cycle', 'duty_cycle_sp', 'encoder_polarity', 'get_attr_from_set', 'get_attr_int', 'get_attr_line', 'get_attr_set', 'get_attr_string', 'polarity', 'position', 'position_d', 'position_i', 'position_p', 'position_sp', 'ramp_down_sp', 'ramp_up_sp', 'reset', 'run_direct', 'run_forever', 'run_timed', 'run_to_abs_pos', 'run_to_rel_pos', 'set_attr_int', 'set_attr_string', 'speed', 'speed_regulation_d', 'speed_regulation_enabled', 'speed_regulation_i', 'speed_regulation_p', 'speed_sp', 'state', 'stop', 'stop_command', 'stop_commands', 'time_sp']
+ROTATEANGLE = 60 # desired angle for rotation
 
-kp = .3 # set the proportion gain
-ki = 1
-kd = .1
+noMoreLines = False
 
-motor_color_control = controller(kp, ki, kd, MIDPOINT, 10)
-readings = 'kp = {}, ki = {}, kd = {}\n'.format(kp, ki, kd)
-readings_file = open('results.txt', 'w')
-#while not io.btn.backspace: # use backspace to stop the robot from moving
-isEnd = False
-
-while not isEnd: # robot stops at end of line
-    value = col.value()
-    if value >= (WHITE - 20): # if White is detected (set a slightly less value)
-        isEnd = True
-    else:
-        readings += str(value) + '\n'
-        correction = motor_color_control.control_signal(value) # get the correction from the PID controller
-        logging.info('Detected = {}, Correction = {}'.format(value, correction))
-        if correction:
-            h.adjust(100, correction)
-            # turn the motor by a proportion
+def run():
+    switch = True # controls direction: True = right; False = left
+    while not noMoreLines:
+        follow_line_till_end()
+        if switch:
+            rotate_to_right()
         else:
-            h.forward(100) # move forward by 100ms
+            rotate_to_left()
+        switch = not switch # change rotation for this line
+        find_line() # while loop breaks here if no line has been detected
 
-readings_file.write(readings)
-readings_file.close() # Will write to a text file in a column
+    ev3.Sound.speak('End of task. Ciao').wait()
 
-ev3.Sound.speak('I have reached the end of line').wait()
-ev3.Sound.speak('Now I shall attempt to find a line on the right').wait()
 
-# find neighbouring line
-
-# PID control
-kp_gyro = 1
-ki_gyro = 0
-kd_gyro = 0
-
-ANGLE = 50 # desired angle to rotate
-position_i = motA.position # initial position
-
-sensor_gyro_control = controller(kp_gyro, ki_gyro, kd_gyro, ANGLE, 10)
-motor_pos_control = controller(kp, ki, kd, position_i, 10)
-isBlack = False
-
-while not isBlack: # if detected black line, the neighbouring line is found
-    value = gyro.value()
-    if value <= (BLACK + 5):
-        isBlack = True
-    else:
-        pos = motA.position
-        correction_gyro = sensor_gyro_control.control_signal(value)
-        correction_pos = motor_pos_control.control_signal(pos)
-        if correction_gyro:
-            h.adjust_gyro(100, correction_gyro)
-            # if correction_pos:
-            # # adjust position here!!!!!!!
-
-ev3.Sound.speak('I have rotated at a desired angle').wait()
-if isBlack:
-    ev3.Sound.speak('I have detected a black line').wait()
-else:
-    ev3.Sound.speak('Now I shall move foward to detect a black line').wait()
-
-# The robot finds a line
-DISTANCE_NAV = position_i + 500 # how far the robot would move forward before giving up
-motor_pos_control = controller(kp, ki, kd, DISTANCE_NAV, 10)
-isBlack = False
-isMaxDist = False
-while not isBlack and not isMaxDist:
-    value = col.value()
-    pos = motA.position
-    if pos >= DISTANCE_NAV:
-        isMaxDist = True
-    elif value <= (BLACK + 5):
-        isBlack = True
-    else:
-        correction_pos = motor_pos_control.control_signal(pos)
-        if correction_pos:
-            h.adjust_forward(100, correction_pos)
-
-if isMaxDist:
-    ev3.Sound.speak('Can not find any black line').wait()
-    # do something????
-elif isBlack:
-    ev3.Sound.speak('Found black line').wait()
-    ev3.Sound.speak('Now I am going to follow the line').wait()
-    kp = .3 # set the proportion gain
-    ki = 1
+def follow_line_till_end():
+    # -------------
+    # PID control
+    # -------------
+    kp = .1 # set the proportion gain
+    ki = 0
     kd = .1
 
     motor_color_control = controller(kp, ki, kd, MIDPOINT, 10)
     readings = 'kp = {}, ki = {}, kd = {}\n'.format(kp, ki, kd)
-    readings_file = open('results.txt', 'w')
-    #while not io.btn.backspace: # use backspace to stop the robot from moving
-    isEnd = False
+    readings_file = open('follow_line_till_end.txt', 'w')
 
-    while not isEnd: # robot stops at end of line
+    isEnd = False
+    while not isEnd:
         value = col.value()
-        if value >= (WHITE - 20): # if White is detected (set a slightly less value)
+        angle = gyro.value()
+        if value >= WHITE: # if white is Detected
             isEnd = True
+            time.sleep(1)
+            ev3.Sound.speak('I have reached the end of line').wait()
         else:
-            readings += str(value) + '\n'
-            correction = motor_color_control.control_signal(value) # get the correction from the PID controller
-            logging.info('Detected = {}, Correction = {}'.format(value, correction))
+            correction = motor_color_control.control_signal(value)
             if correction:
                 h.adjust(100, correction)
-                # turn the motor by a proportion
             else:
-                h.forward(100) # move forward by 100ms
+                h.forward(100)
 
     readings_file.write(readings)
     readings_file.close() # Will write to a text file in a column
 
-    ev3.Sound.speak('I have reached the end of line').wait()
-    ev3.Sound.speak('Now I shall attempt to find a line on the left').wait()
+
+def rotate_to_right():
+    angle_i = gyro.value()
+    ev3.Sound.speak('Now I shall find a line on the right').wait()
+    ANGLE = ROTATEANGLE + angle_i # desired angle
+    logging.info('Initial angle = {}', format(angle_i))
+    logging.info('ANGLE = {}'.format(ANGLE))
+
+    # -------------
+    # PID control
+    # -------------
+    kp = .1 # set the proportion gain
+    ki = 0
+    kd = .1
+
+    sensor_gyro_control = controller(kp, ki, kd, ANGLE, 10)
+    readings = 'kp = {}, ki = {}, kd = {}\n'.format(kp, ki, kd)
+    readings_file = open('rotate_to_right.txt', 'w')
+
+    isBlack = False
+    isAngle = False
+
+    while not isBlack and not isAngle:
+        value = col.value()
+        angle = gyro.value()
+        if value <= MIDPOINT:
+            isBlack = True
+            time.sleep(1)
+            ev3.Sound.speak('I have detected a black line').wait()
+        elif angle >= ANGLE:
+            isAngle = True
+            ev3.Sound.speak('I have rotated to the right').wait()
+        else:
+            correction = sensor_gyro_control.control_signal(angle)
+            if correction:
+                h.adjust_rotation(100, correction)
+            else:
+                h.forward()
+
+def rotate_to_left():
+    angle_i = gyro.value()
+    ev3.Sound.speak('Now I shall find a line on the left').wait()
+    ANGLE = -ROTATEANGLE + angle_i # desired angle
+    logging.info('Initial angle = {}', format(angle_i))
+    logging.info('ANGLE = {}'.format(ANGLE))
+
+    # -------------
+    # PID control
+    # -------------
+    kp = .1 # set the proportion gain
+    ki = 0
+    kd = .1
+
+    sensor_gyro_control = controller(kp, ki, kd, ANGLE, 10)
+    readings = 'kp = {}, ki = {}, kd = {}\n'.format(kp, ki, kd)
+    readings_file = open('rotate_to_left.txt', 'w')
+
+    isBlack = False
+    isAngle = False
+
+    while not isBlack and not isAngle:
+        value = col.value()
+        angle = gyro.value()
+        if value <= MIDPOINT:
+            isBlack = True
+            time.sleep(1)
+            ev3.Sound.speak('I have detected a black line').wait()
+        elif angle <= ANGLE:
+            isAngle = True
+            time.sleep(1)
+            ev3.Sound.speak('I have rotated to the left').wait()
+        else:
+            correction = sensor_gyro_control.control_signal(angle)
+            if correction:
+                h.adjust_rotation(100, correction)
+            else:
+                h.forward()
+
+def find_line():
+    posA_i = motA.position # initial position
+    angle_i = gyro.value() # to stays on a straight line
+
+    ev3.Sound.speak('Now I shall find a line').wait()
+    DIST = 1000
+    DIST_A = posA_i + DIST # desired final position
+    logging.info('Initial motA position = {}', format(posA_i))
+    logging.info('DIST_A = {}'.format(DIST_A))
+
+    # --------------------
+    # PID control (MOTOR)
+    # --------------------
+    kp_m = .01 # set the proportion gain
+    ki_m = 0
+    kd_m = .1
+    # --------------------
+    # PID control (GYRO)
+    # --------------------
+    kp_g = .1 # set the proportion gain
+    ki_g = 0
+    kd_g = .1
+
+    motor_large_control_A = controller(kp_m, ki_m, kd_m, DIST_A, 10) # only track left wheel position...
+    sensor_gyro_control = controller(kp_g, ki_g, kd_g, angle_i, 10) # to stay at that angle
+    readings = 'LargeMotor: kp = {}, ki = {}, kd = {}\n'.format(kp_m, ki_m, kd_m)
+    readings = 'GyroSensor: kp = {}, ki = {}. kd = {}\n'.format(kp_g, ki_g, kd_g)
+    readings_file = open('find_line.txt', 'w')
+
+    isBlack = False
+    isMaxDist = False
+
+    while not isBlack and not isMaxDist:
+        value = col.value()
+        posA = motA.position
+        angle = gyro.value()
+        if value <= MIDPOINT:
+            isBlack = True
+            time.sleep(1)
+            # TODO
+            # adjust gyro value to match its value before rotation while on the black line...
+            ev3.Sound.speak('I have detected a black line').wait()
+        elif posA >= DIST_A: # should not be excuted
+            isMaxDist = True
+            time.sleep(1)
+            ev3.Sound.speak('There is no line here').wait()
+            noMoreLines = True
+        else:
+            correction_A = motor_large_control_A.control_signal(posA)
+            correction_gyro = sensor_gyro_control.control_signal(angle)
+            if correction_A or correction_gyro:
+                h.adjust_rotation(100, correction_gyro)
+                h.adjust_forward(100, correction_A)
+            # if correction_gyro:
+            else:
+                h.forward(100)
+
+run()

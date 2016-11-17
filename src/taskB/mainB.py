@@ -27,9 +27,9 @@ col = io.col
 
 motA.connected
 motB.connected
-motA.reset() # reset the settings
+motA.reset()  # reset the settings
 motB.reset()
-motA.run_timed(time_sp=1000) # functional run for 1 second
+motA.run_timed(time_sp=1000)  # functional run for 1 second
 motB.run_timed(time_sp=1000)
 
 motA.duty_cycle_sp = 20
@@ -45,12 +45,12 @@ col.mode = 'COL-REFLECT'
 
 # ev3.Sound.speak('Calibrating color sensor').wait()
 # ev3.Sound.speak('White').wait()
-WHITE = 62 # io.col.value() # approx 50
+WHITE = 62  # io.col.value() # approx 50
 logging.info('WHITE = {}'.format(WHITE))
-time.sleep(1) # wait for 1 seconds
+time.sleep(1)  # wait for 1 seconds
 
 # ev3.Sound.speak('Black').wait()
-BLACK = 6 #io.col.value() # approv 6
+BLACK = 6  # io.col.value() # approv 6
 logging.info('BLACK = {}'.format(BLACK))
 
 # ev3.Sound.speak('Middle').wait()
@@ -58,23 +58,24 @@ logging.info('BLACK = {}'.format(BLACK))
 # logging.info('MID = {}'.format(MIDDLE))
 
 # smaller than task A because this is now more sensitive to white colour
-MIDPOINT = (WHITE - BLACK) / 2  + BLACK - 20 # approx 28 - 10
+MIDPOINT = (WHITE - BLACK) / 2 + BLACK - 20  # approx 28 - 10
 logging.info('MIDPOINT = {}'.format(MIDPOINT))
 
-ROTATEANGLE = 60 # desired angle for rotation
+ROTATEANGLE = 60  # desired angle for rotation
 
 noMoreLines = False
 
+
 def run():
-    switch = True # controls direction: True = right; False = left
+    switch = True  # controls direction: True = right; False = left
     while not noMoreLines:
         follow_line_till_end()
         if switch:
             rotate_to_right()
         else:
             rotate_to_left()
-        switch = not switch # change rotation for this line
-        find_line() # while loop breaks here if no line has been detected
+        switch = not switch  # change rotation for this line
+        find_line()  # while loop breaks here if no line has been detected
 
     ev3.Sound.speak('End of task. Ciao').wait()
 
@@ -83,7 +84,7 @@ def follow_line_till_end():
     # -------------
     # PID control
     # -------------
-    kp = .1 # set the proportion gain
+    kp = .1  # set the proportion gain
     ki = 0
     kd = .1
 
@@ -95,7 +96,7 @@ def follow_line_till_end():
     while not isEnd:
         value = col.value()
         angle = gyro.value()
-        if value >= WHITE: # if white is Detected
+        if value >= WHITE:  # if white is Detected
             isEnd = True
             time.sleep(1)
             ev3.Sound.speak('I have reached the end of line').wait()
@@ -107,20 +108,20 @@ def follow_line_till_end():
                 h.forward(100)
 
     readings_file.write(readings)
-    readings_file.close() # Will write to a text file in a column
+    readings_file.close()  # Will write to a text file in a column
 
 
 def rotate_to_right():
     angle_i = gyro.value()
     ev3.Sound.speak('Now I shall find a line on the right').wait()
-    ANGLE = ROTATEANGLE + angle_i # desired angle
+    ANGLE = ROTATEANGLE + angle_i  # desired angle
     logging.info('Initial angle = {}', format(angle_i))
     logging.info('ANGLE = {}'.format(ANGLE))
 
     # -------------
     # PID control
     # -------------
-    kp = .1 # set the proportion gain
+    kp = .1  # set the proportion gain
     ki = 0
     kd = .1
 
@@ -148,17 +149,18 @@ def rotate_to_right():
             else:
                 h.forward()
 
+
 def rotate_to_left():
     angle_i = gyro.value()
     ev3.Sound.speak('Now I shall find a line on the left').wait()
-    ANGLE = -ROTATEANGLE + angle_i # desired angle
+    ANGLE = -ROTATEANGLE + angle_i  # desired angle
     logging.info('Initial angle = {}', format(angle_i))
     logging.info('ANGLE = {}'.format(ANGLE))
 
     # -------------
     # PID control
     # -------------
-    kp = .1 # set the proportion gain
+    kp = .1  # set the proportion gain
     ki = 0
     kd = .1
 
@@ -187,33 +189,38 @@ def rotate_to_left():
             else:
                 h.forward()
 
+
 def find_line():
-    posA_i = motA.position # initial position
-    angle_i = gyro.value() # to stays on a straight line
+    posA_i = motA.position  # initial position
+    angle_i = gyro.value()  # to stays on a straight line
 
     ev3.Sound.speak('Now I shall find a line').wait()
     DIST = 1000
-    DIST_A = posA_i + DIST # desired final position
+    DIST_A = posA_i + DIST  # desired final position
     logging.info('Initial motA position = {}', format(posA_i))
     logging.info('DIST_A = {}'.format(DIST_A))
 
     # --------------------
     # PID control (MOTOR)
     # --------------------
-    kp_m = .01 # set the proportion gain
+    kp_m = .01  # set the proportion gain
     ki_m = 0
     kd_m = .1
     # --------------------
     # PID control (GYRO)
     # --------------------
-    kp_g = .1 # set the proportion gain
+    kp_g = .1  # set the proportion gain
     ki_g = 0
     kd_g = .1
 
-    motor_large_control_A = controller(kp_m, ki_m, kd_m, DIST_A, 10) # only track left wheel position...
-    sensor_gyro_control = controller(kp_g, ki_g, kd_g, angle_i, 10) # to stay at that angle
-    readings = 'LargeMotor: kp = {}, ki = {}, kd = {}\n'.format(kp_m, ki_m, kd_m)
-    readings = 'GyroSensor: kp = {}, ki = {}. kd = {}\n'.format(kp_g, ki_g, kd_g)
+    # only track left wheel position...
+    motor_large_control_A = controller(kp_m, ki_m, kd_m, DIST_A, 10)
+    sensor_gyro_control = controller(
+        kp_g, ki_g, kd_g, angle_i, 10)  # to stay at that angle
+    readings = 'LargeMotor: kp = {}, ki = {}, kd = {}\n'.format(
+        kp_m, ki_m, kd_m)
+    readings = 'GyroSensor: kp = {}, ki = {}. kd = {}\n'.format(
+        kp_g, ki_g, kd_g)
     readings_file = open('find_line.txt', 'w')
 
     isBlack = False
@@ -227,9 +234,10 @@ def find_line():
             isBlack = True
             time.sleep(1)
             # TODO
-            # adjust gyro value to match its value before rotation while on the black line...
+            # adjust gyro value to match its value before rotation while on the
+            # black line...
             ev3.Sound.speak('I have detected a black line').wait()
-        elif posA >= DIST_A: # should not be excuted
+        elif posA >= DIST_A:  # should not be excuted
             isMaxDist = True
             time.sleep(1)
             ev3.Sound.speak('There is no line here').wait()

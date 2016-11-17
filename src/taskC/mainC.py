@@ -9,5 +9,11 @@ GOAL:
 
 """
 
+# python import
 import time
+import logging
+
+# local import
 import ev3dev.ev3 as ev3
+import io as io
+from control import controller

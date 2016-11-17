@@ -4,6 +4,7 @@ import io as io
 motA = io.motA
 motB = io.motB
 
+
 def forward(time_sp):
 
     # Using color sensor, detect the reflected light (0 to 100) with 100 being high intensity (white) and 0 being low intensity (black)
@@ -73,10 +74,12 @@ def rotate_clockwise(time_sp, correction):
 
     motA.run_timed(time_sp=time_sp)
     motB.run_timed(time_sp=time_sp)
-    logging.info('ROTATE CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
+    logging.info(
+        'ROTATE CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
 
     motA.duty_cycle_sp = prevA
     motB.duty_cycle_sp = prevB
+
 
 def rotate_counter_clockwise(time_sp, correction):
     global motA, motB
@@ -91,10 +94,12 @@ def rotate_counter_clockwise(time_sp, correction):
 
     motA.run_timed(time_sp=time_sp)
     motB.run_timed(time_sp=time_sp)
-    logging.info('ROTATE COUNTER-CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
+    logging.info(
+        'ROTATE COUNTER-CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
 
     motA.duty_cycle_sp = prevA
     motB.duty_cycle_sp = prevB
+
 
 def adjust_rotation(time_sp, correction):
     if correction == 0:
@@ -106,10 +111,11 @@ def adjust_rotation(time_sp, correction):
         # not enought rotation or too much rotation to the left
         rotate_clockwise(time_sp, abs(correction))
 
+
 def go_forward(time_sp, correction):
     global motA, motB
     prevA = motA.duty_cycle_sp
-    newA = prevA - correction # negative correction
+    newA = prevA - correction  # negative correction
     motA.duty_cycle_sp = newA
     prevB = motB.duty_cycle_sp
     newB = prevB - correction
@@ -117,10 +123,11 @@ def go_forward(time_sp, correction):
 
     motA.run_timed(time_sp=time_sp)
     motB.run_timed(time_sp=time_sp)
-    logging.info('MOVE FORWARD, dutyA = {}, dutyB={}'.format(newA,newB))
+    logging.info('MOVE FORWARD, dutyA = {}, dutyB={}'.format(newA, newB))
 
     motA.duty_cycle_sp = prevA
     motB.duty_cycle_sp = prevB
+
 
 def go_backward(time_sp, correction):
     global motA, motB
@@ -135,10 +142,11 @@ def go_backward(time_sp, correction):
 
     motA.run_timed(time_sp=time_sp)
     motB.run_timed(time_sp=time_sp)
-    logging.info('MOVE BACKWARDS, dutyA = {}, dutyB={}'.format(newA,newB))
+    logging.info('MOVE BACKWARDS, dutyA = {}, dutyB={}'.format(newA, newB))
 
     motA.duty_cycle_sp = prevA
     motB.duty_cycle_sp = prevB
+
 
 def adjust_forward(time_sp, correction):
     if correction == 0:
@@ -162,8 +170,6 @@ def adjust_forward(time_sp, correction):
 #     elif correction < 0:
 #         # More black than expected
 #         turn_left(time_sp, abs(correction))
-
-
 
 
 # def adjust_forward(time_sp, correction):

@@ -1,6 +1,8 @@
 from collections import deque
 
 # Define a controller class that remembers the values and error
+
+
 class controller(object):
     """
     Variables are based on http://ctms.engin.umich.edu/CTMS/index.php?example=Introduction&section=ControlPID#1
@@ -17,24 +19,23 @@ class controller(object):
     """
 
     def __init__(self, kp, ki, kd, r, history=10):
-        self.memory = deque([]) # empty array to keep track of the error
-        self.history = history # number of elements in the memory
-        self.kp = kp # gains
+        self.memory = deque([])  # empty array to keep track of the error
+        self.history = history  # number of elements in the memory
+        self.kp = kp  # gains
         self.ki = ki
         self.kd = kd
         self.desired = r
 
-
     def add(self, value):
         # Given the value from the system, comppute the error and store it
         error = value - self.desired
-        self.memory.appendleft(error) # adds to the left side of the queue
+        self.memory.appendleft(error)  # adds to the left side of the queue
         return error
 
     def maintain_hist(self):
         # Ensure a finite set of history is maintain
         while len(self.memory) > self.history:
-            self.memory.pop() # remove the earliest value
+            self.memory.pop()  # remove the earliest value
 
     def integral(self):
         # the integral is the sum
@@ -49,9 +50,10 @@ class controller(object):
 
     def control_signal(self, value):
         # Returns the PID control signal computed
-        # When called it will compute t he PID and main the memory if the queue is overflowing
+        # When called it will compute t he PID and main the memory if the queue
+        # is overflowing
 
-        err = self.add(value) # add the value
+        err = self.add(value)  # add the value
         # compute the proportion control:
         signal = self.kp * err
         # compute the derivative:
@@ -60,4 +62,4 @@ class controller(object):
         signal += self.integral()
         self.maintain_hist()
 
-        return signal
+        return signal, err  # return the error for computation

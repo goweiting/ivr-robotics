@@ -35,7 +35,7 @@ class controller(object):
     def maintain_hist(self):
         # Ensure a finite set of history is maintain
         while len(self.memory) > self.history:
-            self.memory.pop()  # remove the earliest value
+            self.memory.clear()  # remove the earliest value
 
     def integral(self):
         # the integral is the sum
@@ -50,7 +50,7 @@ class controller(object):
 
     def control_signal(self, value):
         # Returns the PID control signal computed
-        # When called it will compute the PID and main the memory if the queue
+        # When called it will compute t he PID and main the memory if the queue
         # is overflowing
 
         err = self.add(value)  # add the value
@@ -62,4 +62,4 @@ class controller(object):
         signal += self.integral()
         self.maintain_hist()
 
-        return signal
+        return signal, err # return the error for computation

@@ -1,0 +1,6 @@
+experimentation ideas
+
+1. instead of changing the motor speed, change the amount of time it turns? 
+	why?? 
+	because.. with speed, may increase error???? 
+	but with time its more steady???/ 

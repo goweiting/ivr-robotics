@@ -30,22 +30,10 @@ L = io.motA
 R = io.motB
 col = io.col
 
-
-# Setting black and white
-# ev3.Sound.speak('White').wait()
-# # time.sleep(2)  # wait for 3 seconds
-# WHITE = col.value()
-# logging.info('WHITE = {}'.format(WHITE))
-#
-# ev3.Sound.speak('BLACK').wait()
-# BLACK = col.value()
-# logging.info('BLACK = {}'.format(BLACK))
-
-
-# MIDPOINT = (WHITE - BLACK) / 2 + BLACK
 ev3.Sound.speak('Calibrating, put on desired').wait()
 MIDPOINT = col.value()
-ev3.Sound.speak('Done')
+ev3.Sound.speak('Done').wait()
+
 # MOTOR:
 L.connected
 R.connected

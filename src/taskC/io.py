@@ -1,5 +1,11 @@
+# --------------------------------------------------------------
 # Defines the input and output for use for all packages
+# --------------------------------------------------------------
+
+# import
 import ev3dev.ev3 as ev3
+
+# Button
 btn = ev3.Button()
 
 # sensors

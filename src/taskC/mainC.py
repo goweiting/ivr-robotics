@@ -16,4 +16,52 @@ import logging
 # local import
 import ev3dev.ev3 as ev3
 import io as io
-from control import controller
+from helper import follow_until_halt
+
+logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    level=logging.DEBUG)
+
+# global vars
+L = io.motA
+R = io.motB
+servo = io.servo
+us = io.us
+gyro = io.gyro
+col = io.col
+
+# MOTOR:
+L.connected
+R.connected
+L.reset()  # reset the settings
+R.reset()
+L.duty_cycle_sp = 30
+R.duty_cycle_sp = 30
+# SENSORS
+col.connected
+col.mode = 'COL-REFLECT'
+gyro.connected
+# gyro.mode = 'GYRO-CAL'
+gyro.mode = 'GYRO-ANG'
+us.connected
+us.mode = 'US-DIST-CM'
+
+# --------------------------------------------------------------------
+# CALIBRATION
+# --------------------------------------------------------------------
+ev3.Sound.speak('hello').wait()
+ev3.Sound.speak('Calibrating, put on desired').wait()
+MIDPOINT = col.value()
+ev3.Sound.speak('Done').wait()
+logging.info('-------------------CALIBRATION-------------------')
+logging.info('MIDPOINT = {}'.format(MIDPOINT))
+
+# --------------------------------------------------------------------
+# MANUAL SETTINGS
+# --------------------------------------------------------------------
+
+# --------------------------------------------------------------------
+# START
+# --------------------------------------------------------------------
+logging.info('-------------------RUNNING-------------------')
+follow_until_halt(v=50, desired_col=MIDPOINT, desired_distance=100 )

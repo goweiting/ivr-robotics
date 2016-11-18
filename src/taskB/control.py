@@ -50,7 +50,7 @@ class controller(object):
 
     def control_signal(self, value):
         # Returns the PID control signal computed
-        # When called it will compute the PID and main the memory if the queue
+        # When called it will compute t he PID and main the memory if the queue
         # is overflowing
 
         err = self.add(value)  # add the value
@@ -62,4 +62,4 @@ class controller(object):
         signal += self.integral()
         self.maintain_hist()
 
-        return signal
+        return signal, err  # return the error for computation

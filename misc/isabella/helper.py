@@ -4,7 +4,6 @@ import io as io
 motA = io.motA
 motB = io.motB
 
-
 def forward(time_sp):
 
     # Using color sensor, detect the reflected light (0 to 100) with 100 being high intensity (white) and 0 being low intensity (black)
@@ -60,62 +59,68 @@ def turn_left(time_sp, correction):
     mot.duty_cycle_sp = prev
 
 
-# Isabella's method
-def rotate_clockwise(time_sp, correction):
+def rotate_clockwise(time_sp, corretion):
     global motA, motB
+    motA = motA
+    motB = motB
 
     prevA = motA.duty_cycle_sp
     newA = prevA + correction
-    motA.duty_cycle_sp = newA
     prevB = motB.duty_cycle_sp
     newB = prevB + correction
     newB = -newB
-    motB.duty_cycle_sp = newB
-
-    motA.run_timed(time_sp=time_sp)
-    motB.run_timed(time_sp=time_sp)
-    logging.info(
-        'ROTATE CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
-
-    motA.duty_cycle_sp = prevA
-    motB.duty_cycle_sp = prevB
+    motA.run_timed(time_sp=time_sp, duty_cycle_sp=duty_cycle_sp)
+    motB.run_timed(time_sp=time_sp, duty_cycle_sp=duty_cycle_sp)
 
 
-def rotate_counter_clockwise(time_sp, correction):
+def rotate_counter_clockwise(time_sp, corretion):
     global motA, motB
+    motA = motA
+    motB = motB
 
     prevA = motA.duty_cycle_sp
     newA = prevA + correction
     newA = -newA
-    motA.duty_cycle_sp = newA
     prevB = motB.duty_cycle_sp
     newB = prevB + correction
-    motB.duty_cycle_sp = newB
-
-    motA.run_timed(time_sp=time_sp)
-    motB.run_timed(time_sp=time_sp)
-    logging.info(
-        'ROTATE COUNTER-CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
-
-    motA.duty_cycle_sp = prevA
-    motB.duty_cycle_sp = prevB
+    motA.run_timed(time_sp=time_sp, duty_cycle_sp=duty_cycle_sp)
+    motB.run_timed(time_sp=time_sp, duty_cycle_sp=duty_cycle_sp)
 
 
-def adjust_rotation(time_sp, correction):
+def rotate_large_motor(time_sp, correction):
+    # repeated method for adjust_large_motor.... cba changing now tho
+    global motA, motB
+    motA = motA
+    motB = motB
+
     if correction == 0:
         pass
     elif correction > 0:
-        # too much rotation to the right
-        rotate_counter_clockwise(time_sp, abs(correction))
+        # too much clockwise
+        rotate_counter_clockwise(time_sp, correction)
     elif correction < 0:
-        # not enought rotation or too much rotation to the left
-        rotate_clockwise(time_sp, abs(correction))
+        # not enough clockwise
+        rotate_clockwise(time_sp, -correction)
 
+
+def adjust_rotation(time_sp, correction): # adjust large motor rotation
+    if correction == 0:
+        pass
+    elif correction > 0:
+        rotate_large_motor(time_sp, correction)
+    #     # too much rotation to the right
+    #     # rotate_counter_clockwise(time_sp, abs(correction))
+    # elif correction < 0:
+    #     # not enought rotation or too much rotation to the left
+    #     rotate_clockwise(time_sp, abs(correction))
 
 def go_forward(time_sp, correction):
     global motA, motB
+    motA = motA
+    motB = motB
+
     prevA = motA.duty_cycle_sp
-    newA = prevA - correction  # negative correction
+    newA = prevA - correction # negative correction
     motA.duty_cycle_sp = newA
     prevB = motB.duty_cycle_sp
     newB = prevB - correction
@@ -123,14 +128,16 @@ def go_forward(time_sp, correction):
 
     motA.run_timed(time_sp=time_sp)
     motB.run_timed(time_sp=time_sp)
-    logging.info('MOVE FORWARD, dutyA = {}, dutyB={}'.format(newA, newB))
+    logging.info('MOVE FORWARD, dutyA = {}, dutyB={}'.format(newA,newB))
 
     motA.duty_cycle_sp = prevA
     motB.duty_cycle_sp = prevB
 
-
 def go_backward(time_sp, correction):
     global motA, motB
+    motA = motA
+    motB = motB
+
     prevA = motA.duty_cycle_sp
     newA = prevA - correction
     newA = -newA
@@ -142,11 +149,10 @@ def go_backward(time_sp, correction):
 
     motA.run_timed(time_sp=time_sp)
     motB.run_timed(time_sp=time_sp)
-    logging.info('MOVE BACKWARDS, dutyA = {}, dutyB={}'.format(newA, newB))
+    logging.info('MOVE BACKWARDS, dutyA = {}, dutyB={}'.format(newA,newB))
 
     motA.duty_cycle_sp = prevA
     motB.duty_cycle_sp = prevB
-
 
 def adjust_forward(time_sp, correction):
     if correction == 0:
@@ -157,6 +163,29 @@ def adjust_forward(time_sp, correction):
     elif correction < 0:
         # not enough distance
         go_forward(time_sp, correction)
+
+
+def adjust_medium_motor(time_sp, correction):
+    global motmed
+    motmed = motmed
+    pos_i = motmed.position
+    if correction == 0:
+        pass
+    elif correction > 0:
+        # too much clockwise
+        prev = motmed.duty_cycle_sp
+        new = prev + correction
+        # rotate anti clockwise
+        new = -new
+        motmed.run_timed(time_sp=time_sp, duty_cycle_sp=new)
+        motmed.duty_cycle_sp = prev
+    elif correction < 0:
+        # not enough clockwise
+        prev = motmed.duty_cycle_sp
+        new = prev - correction
+        # rotate clockwise more
+        motmed.run_timed(time_sp=time_sp, duty_cycle_sp=new)
+        motmed.duty_cycle_sp = prev
 
 # """
 # This method rotates the robot according to the gyro Reading
@@ -170,6 +199,8 @@ def adjust_forward(time_sp, correction):
 #     elif correction < 0:
 #         # More black than expected
 #         turn_left(time_sp, abs(correction))
+
+
 
 
 # def adjust_forward(time_sp, correction):

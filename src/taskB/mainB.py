@@ -7,6 +7,7 @@
 # - For the robot to find its way to the end.
 # - Have robot speak its current state when switching lines: 'I have reached the end of the line and will search on the right for the next line', for example
 
+# imports
 import logging
 import time
 
@@ -15,241 +16,269 @@ import helper as h
 import io as io
 from control import controller
 
-logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p',
-                    level=logging.DEBUG)
-
-ev3.Sound.speak('This is task B').wait()
-motA = io.motA
-motB = io.motB
-gyro = io.gyro
+# -----------------
+# START
+# -----------------
+ev3.Sound.speak('B').wait()
+# Declare the motors and sensors for connection
+L = io.motA
+R = io.motB
 col = io.col
+gyro = io.gyro
 
-motA.connected
-motB.connected
-motA.reset()  # reset the settings
-motB.reset()
-motA.run_timed(time_sp=1000)  # functional run for 1 second
-motB.run_timed(time_sp=1000)
+# MOTOR
+L.connected
+R.connected
+L.reset()
+R.reset()
+L.duty_cycle_sp = 30
+R.duty_cycle_sp = 30
 
-motA.duty_cycle_sp = 20
-motB.duty_cycle_sp = 20
-motA.speed_sp = 20
-motB.speed_sp = 20
+# SENSORS
+col.connected
+col.mode = 'COL-REFLECT'
 
 gyro.connected
 gyro.mode = 'GYRO-ANG'
 
-col.connected
-col.mode = 'COL-REFLECT'
+BLACK = 8
+WHITE = 60
+# ------------------------------
+# Obtain BLACK and WHITE values
+# ------------------------------
+ev3.Sound.speak('black').wait()
+BLACK = col.value()
+while not io.btn.backspace:
+    BLACK = col.value()
+# ev3.Sound.speak('ok').wait()
 
-# ev3.Sound.speak('Calibrating color sensor').wait()
-# ev3.Sound.speak('White').wait()
-WHITE = 62  # io.col.value() # approx 50
-logging.info('WHITE = {}'.format(WHITE))
-time.sleep(1)  # wait for 1 seconds
+ev3.Sound.speak('white').wait()
+WHITE = col.value()
+while not io.btn.backspace:
+    WHITE = col.value()
+# ev3.Sound.speak('ok').wait()
 
-# ev3.Sound.speak('Black').wait()
-BLACK = 6  # io.col.value() # approv 6
-logging.info('BLACK = {}'.format(BLACK))
+# ------------------------------
+# Obtain desired angle
+# ------------------------------
+ev3.Sound.speak('straight').wait() # to maintain the angle
+ANGLE = gyro.value()
+while not io.btn.backspace:
+    ANGLE = gyro.value()
+ev3.Sound.speak('ok').wait()
 
-# ev3.Sound.speak('Middle').wait()
-# MIDDLE = io.col.value()
-# logging.info('MID = {}'.format(MIDDLE))
+# set motor attributes
+v = 20
+R.time_sp = 100
+L.time_sp = 100
 
-# smaller than task A because this is now more sensitive to white colour
-MIDPOINT = (WHITE - BLACK) / 2 + BLACK - 20  # approx 28 - 10
-logging.info('MIDPOINT = {}'.format(MIDPOINT))
+# set colour attributes
+midpoint = BLACK + 5
+turn = 80 # turns 90 degree relative
 
-ROTATEANGLE = 60  # desired angle for rotation
+def follow_line(kp, ki, kd, hist, midpoint, side):
+    # side = 1 for Right or 0 for Left
+    kp = kp
+    ki = ki
+    kd = kd
+    hist = hist
+    desired_colour = midpoint
+    motor_colour_control = controller(kp, ki, kd, desired_colour, hist)
 
-noMoreLines = False
-
-
-def run():
-    switch = True  # controls direction: True = right; False = left
-    while not noMoreLines:
-        follow_line_till_end()
-        if switch:
-            rotate_to_right()
-        else:
-            rotate_to_left()
-        switch = not switch  # change rotation for this line
-        find_line()  # while loop breaks here if no line has been detected
-
-    ev3.Sound.speak('End of task. Ciao').wait()
-
-
-def follow_line_till_end():
-    # -------------
-    # PID control
-    # -------------
-    kp = .1  # set the proportion gain
-    ki = 0
-    kd = .1
-
-    motor_color_control = controller(kp, ki, kd, MIDPOINT, 10)
-    readings = 'kp = {}, ki = {}, kd = {}\n'.format(kp, ki, kd)
-    readings_file = open('follow_line_till_end.txt', 'w')
-
-    isEnd = False
-    while not isEnd:
-        value = col.value()
-        angle = gyro.value()
-        if value >= WHITE:  # if white is Detected
-            isEnd = True
-            time.sleep(1)
-            ev3.Sound.speak('I have reached the end of line').wait()
-        else:
-            correction = motor_color_control.control_signal(value)
-            if correction:
-                h.adjust(100, correction)
+    isEnd = False # follows line till end
+    if side: # right side
+        ev3.Sound.speak('right side').wait()
+        while not io.btn.backspace and not isEnd:
+            curr_colour = col.value()
+            if curr_colour >= (WHITE - 10): # pretty good..
+                isEnd = True
+                ev3.Sound.speak('end of right line').wait()
+                break
             else:
-                h.forward(100)
+                signal, err = motor_colour_control.control_signal(curr_colour)
+                signal = abs(signal)
+                if err > 0: # too much white
+                    R.run_timed(duty_cycle_sp=v+signal)
+                    # L.run_timed(duty_cycle_sp=v-signal)
+                elif err < 0: # too much black
+                    # R.run_timed(duty_cycle_sp=v-signal)
+                    L.run_timed(duty_cycle_sp=v+signal)
+                else:
+                    pass
+    else: # left side
+        ev3.Sound.speak('left side').wait()
+        while not io.btn.backspace and not isEnd:
+            curr_colour = col.value()
+            if curr_colour >= (WHITE - 10):
+                isEnd = True
+                ev3.Sound.speak('end of left line').wait()
+                break
+            else:
+                signal, err = motor_colour_control.control_signal(curr_colour)
+                signal = abs(signal)
+                if err > 0: # too much white
+                    # R.run_timed(duty_cycle_sp=v-signal)
+                    L.run_timed(duty_cycle_sp=v+signal)
+                elif err < 0:
+                    R.run_timed(duty_cycle_sp=v+signal)
+                    # L.run_timed(duty_cycle_sp=v-signal)
+                else:
+                    pass
 
-    readings_file.write(readings)
-    readings_file.close()  # Will write to a text file in a column
+def rotate(kp, ki, kd, hist, turn, side):
+    # this method rotates the robot in place
+    # side : 0 for left and 1 for right
+    # turn : how much to turn (relative to ANGLE)
+    kp = kp
+    ki = ki
+    kd = kd
+    hist = hist
+    if side:
+        ev3.Sound.speak('rotate right').wait()
+        desired_angle = ANGLE + turn
+    else:
+        ev3.Sound.speak('rotate left').wait()
+        desired_angle = ANGLE - turn
+    sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
 
+    isRotated = False
+    while not io.btn.backspace and not isRotated:
+        curr_angle = gyro.value()
+        if curr_angle == desired_angle:
+            isRotated = True
+            ev3.Sound.speak('finish rotating').wait()
+            break
+        else:
+            signal, err = sensor_gyro_control.control_signal(curr_angle)
+            signal = abs(signal)
+            if err > 0: # too much clockwise
+                R.run_timed(duty_cycle_sp=v+signal)
+                L.run_timed(duty_cycle_sp=-v-signal)
+            elif err < 0:
+                R.run_timed(duty_cycle_sp=-v-signal)
+                L.run_timed(duty_cycle_sp=v+signal)
+            else:
+                pass
 
-def rotate_to_right():
-    angle_i = gyro.value()
-    ev3.Sound.speak('Now I shall find a line on the right').wait()
-    ANGLE = ROTATEANGLE + angle_i  # desired angle
-    logging.info('Initial angle = {}', format(angle_i))
-    logging.info('ANGLE = {}'.format(ANGLE))
+def find_line(kp, ki, kd, hist):
+    kp = kp
+    ki = ki
+    kd = kd
+    hist = hist
+    desired_angle = gyro.value() # maintains angle
+    sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
 
-    # -------------
-    # PID control
-    # -------------
-    kp = .1  # set the proportion gain
-    ki = 0
-    kd = .1
-
-    sensor_gyro_control = controller(kp, ki, kd, ANGLE, 10)
-    readings = 'kp = {}, ki = {}, kd = {}\n'.format(kp, ki, kd)
-    readings_file = open('rotate_to_right.txt', 'w')
+    # set different gains here ...
+    desired_colour = midpoint
+    motor_color_control = controller(kp, ki, kd, desired_colour, hist)
 
     isBlack = False
-    isAngle = False
-
-    while not isBlack and not isAngle:
-        value = col.value()
-        angle = gyro.value()
-        if value <= MIDPOINT:
+    while not io.btn.backspace and not isBlack:
+        curr_colour = col.value()
+        if curr_colour == midpoint:
             isBlack = True
-            time.sleep(1)
-            ev3.Sound.speak('I have detected a black line').wait()
-        elif angle >= ANGLE:
-            isAngle = True
-            ev3.Sound.speak('I have rotated to the right').wait()
+            ev3.Sound.speak('Found line').wait()
+            break
         else:
-            correction = sensor_gyro_control.control_signal(angle)
-            if correction:
-                h.adjust_rotation(100, correction)
+            # find midpoint
+            signal, err = motor_color_control.control_signal(curr_colour)
+            signal = abs(signal)
+            if err > 0: # too much white
+                R.run_timed(duty_cycle_sp=v+signal)
+                L.run_timed(duty_cycle_sp=v+signal)
+            elif err < 0: # too much black
+                R.run_timed(duty_cycle_sp=-v-signal)
+                L.run_timed(duty_cycle_sp=-v-signal)
             else:
-                h.forward()
+                pass
 
-
-def rotate_to_left():
-    angle_i = gyro.value()
-    ev3.Sound.speak('Now I shall find a line on the left').wait()
-    ANGLE = -ROTATEANGLE + angle_i  # desired angle
-    logging.info('Initial angle = {}', format(angle_i))
-    logging.info('ANGLE = {}'.format(ANGLE))
-
-    # -------------
-    # PID control
-    # -------------
-    kp = .1  # set the proportion gain
-    ki = 0
-    kd = .1
-
-    sensor_gyro_control = controller(kp, ki, kd, ANGLE, 10)
-    readings = 'kp = {}, ki = {}, kd = {}\n'.format(kp, ki, kd)
-    readings_file = open('rotate_to_left.txt', 'w')
-
-    isBlack = False
-    isAngle = False
-
-    while not isBlack and not isAngle:
-        value = col.value()
-        angle = gyro.value()
-        if value <= MIDPOINT:
-            isBlack = True
-            time.sleep(1)
-            ev3.Sound.speak('I have detected a black line').wait()
-        elif angle <= ANGLE:
-            isAngle = True
-            time.sleep(1)
-            ev3.Sound.speak('I have rotated to the left').wait()
-        else:
-            correction = sensor_gyro_control.control_signal(angle)
-            if correction:
-                h.adjust_rotation(100, correction)
+            curr_angle = gyro.value()
+            signal, err = sensor_gyro_control.control_signal(curr_angle)
+            signal = abs(signal)
+            if err > 0: # too much clockwise
+                R.run_timed(duty_cycle_sp=v+signal)
+                L.run_timed(duty_cycle_sp=v-signal)
+            elif err < 0: # too much counter clockwise
+                R.run_timed(duty_cycle_sp=v-signal)
+                L.run_timed(duty_cycle_sp=v+signal)
             else:
-                h.forward()
+                # R.run_timed(duty_cycle_sp=v+signal)
+                # L.run_timed(duty_cycle_sp=v+signal)
+                pass
 
 
-def find_line():
-    posA_i = motA.position  # initial position
-    angle_i = gyro.value()  # to stays on a straight line
+while not io.btn.backspace:
+    follow_line(.01,0,0,10,midpoint,1) # on left line, follows right side
+    rotate(.01,0,0,10,turn,1) # rotate to right
+    find_line(.01,0,0,10)
+    follow_line(.01,0,0,10,midpoint,0)
+    rotate(.01,0,0,10,turn,0) # rotate to left 
+    find_line(.01,0,0,10)
 
-    ev3.Sound.speak('Now I shall find a line').wait()
-    DIST = 1000
-    DIST_A = posA_i + DIST  # desired final position
-    logging.info('Initial motA position = {}', format(posA_i))
-    logging.info('DIST_A = {}'.format(DIST_A))
-
-    # --------------------
-    # PID control (MOTOR)
-    # --------------------
-    kp_m = .01  # set the proportion gain
-    ki_m = 0
-    kd_m = .1
-    # --------------------
-    # PID control (GYRO)
-    # --------------------
-    kp_g = .1  # set the proportion gain
-    ki_g = 0
-    kd_g = .1
-
-    # only track left wheel position...
-    motor_large_control_A = controller(kp_m, ki_m, kd_m, DIST_A, 10)
-    sensor_gyro_control = controller(
-        kp_g, ki_g, kd_g, angle_i, 10)  # to stay at that angle
-    readings = 'LargeMotor: kp = {}, ki = {}, kd = {}\n'.format(
-        kp_m, ki_m, kd_m)
-    readings = 'GyroSensor: kp = {}, ki = {}. kd = {}\n'.format(
-        kp_g, ki_g, kd_g)
-    readings_file = open('find_line.txt', 'w')
-
-    isBlack = False
-    isMaxDist = False
-
-    while not isBlack and not isMaxDist:
-        value = col.value()
-        posA = motA.position
-        angle = gyro.value()
-        if value <= MIDPOINT:
-            isBlack = True
-            time.sleep(1)
-            # TODO
-            # adjust gyro value to match its value before rotation while on the
-            # black line...
-            ev3.Sound.speak('I have detected a black line').wait()
-        elif posA >= DIST_A:  # should not be excuted
-            isMaxDist = True
-            time.sleep(1)
-            ev3.Sound.speak('There is no line here').wait()
-            noMoreLines = True
-        else:
-            correction_A = motor_large_control_A.control_signal(posA)
-            correction_gyro = sensor_gyro_control.control_signal(angle)
-            if correction_A or correction_gyro:
-                h.adjust_rotation(100, correction_gyro)
-                h.adjust_forward(100, correction_A)
-            # if correction_gyro:
-            else:
-                h.forward(100)
-
-run()
+#
+# def fix_position(kp, ki, kd, hist, angle, side):
+#     # angle = ANGLE at start
+#     # side = 0 for left and 1 for right
+#     kp = kp
+#     ki = ki
+#     kd = kd
+#     hist = hist
+#     desired_angle = angle
+#     sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
+#
+#     desired_colour = midpoint
+#     isFixed = False
+#
+#     while not io.btn.backspace and not isFixed:
+#         curr_angle = gyro.value()
+#         curr_col = col.value()
+#         # if curr_col > midpoint: # too much white
+#
+#
+# def fix_position(): # on right side
+#     # gyro controller
+#     kp = .1
+#     ki = .01
+#     kd = .01
+#     hist = 5
+#     desired_angle = gyro.value() - 50 # for the right side
+#     sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
+#     isFixed = False
+#
+#     print desired_angle
+#     v = 15
+#     R.time_sp = 100
+#     L.time_sp = 100
+#
+#     kp_m = .1
+#     ki_m = .01
+#     kd_m = .01
+#     hist = 5
+#     desired_colour = BLACK+5 # more like the mid point...
+#     motor_col_control = controller(kp_m,ki_m,kd_m,desired_colour,hist)
+#
+#     while not io.btn.backspace and not isFixed:
+#         curr_angle = gyro.value()
+#         curr_col = col.value()
+#         if curr_angle == desired_angle and curr_col == desired_colour:
+#             isFixed = True
+#         else:
+#             signal, err = sensor_gyro_control.control_signal(curr_angle)
+#             signal = abs(signal)
+#             signal_m ,err_m = motor_col_control.control_signal(curr_col)
+#             signal_m = abs(signal_m)
+#
+#             # for right line....
+#             if err_m > 0: # too much white...
+#                 R.run_timed(duty_cycle_sp=v-signal_m)
+#                 L.run_timed(duty_cycle_sp=v+signal_m)
+#             elif err_m < 0: # too much black ...
+#                 R.run_timed(duty_cycle_sp=v+signal_m)
+#                 L.run_timed(duty_cycle_sp=v-signal_m)
+#
+#             if err > 0: # too muchclockwise
+#                 R.run_timed(duty_cycle_sp=v+signal)
+#                 L.run_timed(duty_cycle_sp=-v-signal)
+#             elif err < 0:
+#                 R.run_timed(duty_cycle_sp=-v-signal)
+#                 L.run_timed(duty_cycle_sp=v+signal)

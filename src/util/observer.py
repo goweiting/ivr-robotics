@@ -24,16 +24,16 @@ class Listener(object):
 
     def update(self, val):
         # do something with regards to the val received from the subject
-        if 'mode' == 'LT':
-            if self.goal_state <= val:
+        logging.info('{} : updated with {}'.format(self.__str__(), val))
+        if self.mode == 'LT':
+            if val <= self.goal_state:
                 self.state = True
+                logging.info('{} TRIGGERED!!'.format(self._string))
 
-        elif 'mode' == 'GT':
+        elif self.mode == 'GT':
             if self.goal_state >= val:
                 self.state = True
-
-        else:
-            self.state = False
+                logging.info('{} TRIGGERED!!'.format(self._string))
 
     def get_state(self):
         return self.state
@@ -51,10 +51,11 @@ class Subject(object):
     For our task, the subject is almost always a sensor (an input)
     """
 
-    def __init__(self):
+    def __init__(self, name):
         """
         It is assumed that the sensor is already calibrated
         """
+        self._string = name
         self.current_val = None
         self.listeners = [] # maintain a list of listners that it needs to notify
 
@@ -78,12 +79,24 @@ class Subject(object):
         """
         notify all listener if there is change in state
         """
-        for listener in self.listners:
+        for listener in self.listeners:
             listener.update(val)
 
     def set_val(self, val):
+        """
+        Update the subject's value and notify listeners
+        """
+
         self.current_val = val
+        logging.info('{} update = {}'.format(self._string, self.current_val))
         self.notify_listener(self.current_val)
 
     def get_val(self):
         return self.current_val
+
+
+    def __str__(self):
+        return str(self._string)
+
+    def __repr__(self):
+        return self.__str__()

@@ -14,7 +14,7 @@ import os
 
 # local import
 import ev3dev.ev3 as ev3
-from util.io import io
+from util import io
 from util.control import Controller
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',

@@ -212,7 +212,7 @@ while not io.btn.backspace:
     rotate(.01,0,0,10,turn,1) # rotate to right
     find_line(.01,0,0,10)
     follow_line(.01,0,0,10,midpoint,0)
-    rotate(.01,0,0,10,turn,0) # rotate to left 
+    rotate(.01,0,0,10,turn,0) # rotate to left
     find_line(.01,0,0,10)
 
 #

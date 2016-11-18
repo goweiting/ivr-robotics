@@ -22,6 +22,122 @@ gyro = io.gyro
 col = io.col
 
 
+def turn_CW(v, angle, motor):
+    """
+    turn the robot on the spot by the desired_angle by referencing using the gyro value
+    """
+
+    global L, R, servo, gyro
+
+    gyro.mode = 'GYRO-ANG'
+    ev3.Sound.speak(
+        'Turning {} clock wise {} degrees'.format(motor, angle)).wait()
+    logging.info('Turning {} clock wise {} degrees'.format(motor, angle))
+
+    if motor == 'WHEEL':
+        current = gyro.value()
+        angle = current + angle
+        turn_control = Controller(.3, 0, 0.01,
+                                  angle,
+                                  history=10)
+        signal, err = turn_control.control_signal(gyro.value())
+        R.polarity = 'inversed'
+        while True:
+            R.run_timed(time_sp=100, speed_sp=v + abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v + abs(signal))
+            signal, err = turn_control.control_signal(gyro.value())
+            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                gyro.value(), signal, err, L.speed_sp, R.speed_sp))
+            if abs(signal) <= 1:  # tolerance
+                R.stop()
+                L.stop()
+                R.polarity = 'normal'
+                return
+            if io.btn.backspace:
+                R.polarity = 'normal'
+                break
+
+    elif motor == 'SERVO':
+        logging.info(servo.polarity)
+        servo.polarity = 'normal'
+        angle = servo.position + angle
+        turn_control = Controller(.1s, 0, 0,
+                                  angle,
+                                  history=10)
+        signal, err = turn_control.control_signal(servo.position)
+
+        while True:
+            servo.run_timed(time_sp=100, speed_sp=v + abs(signal))
+            signal, err = turn_control.control_signal(servo.position)
+            logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
+                servo.position, signal, err, servo.speed_sp))
+            if abs(signal) <= 1:  # tolerance
+                servo.stop()
+                return
+            if io.btn.backspace:
+                servo.polarity = 'normal'
+                break
+
+
+def turn_CCW(v, angle, motor):
+    """
+    turn the robot on the spot by the desired_angle by referencing using the gyro value
+    """
+
+    global L, R, gyro
+
+    gyro.mode = 'GYRO-ANG'
+    ev3.Sound.speak(
+        'Turning {} counter clock wise {} degrees'.format(motor, angle)).wait()
+    logging.info(
+        'Turning {} counter clock wise {} degrees'.format(motor, angle))
+
+    if motor == 'WHEEL':
+        current = gyro.value()
+        angle = current - angle
+        turn_control = Controller(.3, 0, 0.01,
+                                  angle,
+                                  history=10)
+        signal, err = turn_control.control_signal(gyro.value())
+        L.polarity = 'inversed'
+        while True:
+            R.run_timed(time_sp=100, speed_sp=v + abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v + abs(signal))
+            signal, err = turn_control.control_signal(gyro.value())
+            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                gyro.value(), signal, err, L.speed_sp, R.speed_sp))
+            if abs(signal) <= 1:  # tolerance
+                R.stop()
+                L.stop()
+                L.polarity = 'normal'
+                return
+            if io.btn.backspace:
+                L.polarity = 'normal'
+                break
+
+    elif motor == 'SERVO':
+        logging.info(servo.polarity)
+        servo.polarity = 'inversed'
+        angle = servo.position + angle  # cause servo is weird
+        turn_control = Controller(.1, 0, 0,
+                                  angle,
+                                  history=10)
+        signal, err = turn_control.control_signal(servo.position)
+        while True:
+            servo.run_timed(time_sp=100, speed_sp=v + abs(signal))
+            signal, err = turn_control.control_signal(servo.position)
+            logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
+                servo.position, signal, err, servo.speed_sp))
+            if abs(signal) <= 1:  # tolerance
+                servo.stop()
+                servo.polarity = 'normal'
+                return
+
+            if io.btn.backspace:
+                servo.polarity = 'normal'
+                break
+
+
 def follow_until_halt(v, desired_col, desired_distance):
     """
     When called, robot will move follow the line
@@ -33,26 +149,24 @@ def follow_until_halt(v, desired_col, desired_distance):
     global col, L, R, us
 
     ev3.Sound.speak(
-        'Following black line until distance {}'.format(desired_distance))
+        'Following black line until distance {}'.format(desired_distance)).wait()
     # defines the line control so that the motor goes straight
     line_control = Controller(1, 0, 0,
                               desired_col,
                               history=10)  # a P controller
-    distance_subject = Subject()
-    halt_ = Listener('halt_',
-                     distance_subject,
-                     desired_distance,
-                     'LT')  # halt when LT
+    distance_subject = Subject('distance_subject')
+    halt_ = Listener('halt_', distance_subject,
+                     desired_distance, 'LT')  # halt when LT
 
     while True:
 
         distance_subject.set_val(us.value())
+
         if halt_.get_state():  # need to halt since disntance have reached
-            L.stop()
-            R.stop()
             ev3.Sound.speak('Object detected at range {}'.format(
                 us.value())).wait()  # inform user
-            break
+            logging.info('STOP!')
+            return
 
         else:  # havent reach yet, continnue following the line
             signal, err = line_control.control_signal(col.value())
@@ -61,7 +175,3 @@ def follow_until_halt(v, desired_col, desired_distance):
 
         if io.btn.backspace:
             break
-
-
-# def adjust_heading():
-#     pass

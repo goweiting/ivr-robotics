@@ -3,8 +3,8 @@ import ev3dev.ev3 as ev3
 btn = ev3.Button()
 
 # sensors
-col = ev3.ColorSensor(ev3.INPUT_3)
-gyro = ev3.GyroSensor(ev3.INPUT_1)
+col = ev3.ColorSensor(ev3.INPUT_4)
+gyro = ev3.GyroSensor(ev3.INPUT_3)
 # us = ev3.UltrasonicSensor()
 
 # motors

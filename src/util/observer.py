@@ -43,7 +43,7 @@ class Listener(object):
 
     def __repr__(self):
         return self.__str__()
-        
+
 
 class Subject(object):
     """
@@ -64,7 +64,7 @@ class Subject(object):
         """
         assert type(listener) is Listener
         self.listeners.append(listener)
-        logging.info('{} : {} added'.format(self, listener))
+        logging.info('added {}'.format(listener))
 
     def unregister(self, listener):
         """
@@ -72,6 +72,7 @@ class Subject(object):
         """
         assert type(listener) is Listener
         self.listeners.remove(listener)
+        logging.info('removed {}'.format(listener))
 
     def notify_listener(self, val):
         """

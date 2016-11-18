@@ -12,9 +12,10 @@ import logging
 import time
 import os
 
+# local import
 import ev3dev.ev3 as ev3
-import io as io
-from control import controller
+from util.io import io
+from util.control import Controller
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -51,7 +52,7 @@ ki = .1
 kd = .9
 history = 5
 
-control = controller(kp, ki, kd, MIDPOINT, history)
+control = Controller(kp, ki, kd, MIDPOINT, history)
 # ----------------
 # Set up writing file
 # ----------------

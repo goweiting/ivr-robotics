@@ -15,7 +15,7 @@ import logging
 
 # local import
 import ev3dev.ev3 as ev3
-import io as io
+import src.util.io as io
 from helper import follow_until_halt
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',

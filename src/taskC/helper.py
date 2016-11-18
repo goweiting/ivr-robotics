@@ -9,9 +9,9 @@
 import logging
 
 import ev3dev.ev3 as ev3
-import io as io
-from control import Controller
-from observer import Listener, Subject
+import util.io as io
+from util.control import Controller
+from util.observer import Listener, Subject
 
 # global vars
 L = io.motA
@@ -39,7 +39,8 @@ def follow_until_halt(v, desired_col, desired_distance):
                               desired_col,
                               history=10)  # a P controller
     distance_subject = Subject()
-    halt_ = Listener(distance_subject,
+    halt_ = Listener('halt_',
+                     distance_subject,
                      desired_distance,
                      'LT')  # halt when LT
 

@@ -37,8 +37,8 @@ L.connected
 R.connected
 L.reset()  # reset the settings
 R.reset()
-L.duty_cycle_sp = 30
-R.duty_cycle_sp = 30
+L.duty_cycle_sp = 40
+R.duty_cycle_sp = 40
 servo.connected
 servo.reset()
 servo.duty_cycle_sp = 40
@@ -47,40 +47,55 @@ col.connected
 col.mode = 'COL-REFLECT'
 gyro.connected
 gyro.mode = 'GYRO-CAL'
-gyro.mode = 'GYRO-ANG'
 us.connected
 us.mode = 'US-DIST-CM'
 
 # --------------------------------------------------------------------
 # CALIBRATION
 # --------------------------------------------------------------------
-ev3.Sound.speak('hello').wait()
-ev3.Sound.speak('Calibrating, put on desired').wait()
+# ev3.Sound.speak('hello').wait()
+# ev3.Sound.speak('Calibrating, put on desired').wait()
 MIDPOINT = col.value()
-ev3.Sound.speak('Done').wait()
+# ev3.Sound.speak('Done').wait()
 logging.info('-------------------CALIBRATION-------------------')
 logging.info('MIDPOINT = {}'.format(MIDPOINT))
-
-# --------------------------------------------------------------------
-# MANUAL SETTINGS
-# --------------------------------------------------------------------
-
-# --------------------------------------------------------------------
-# START
-# --------------------------------------------------------------------
-logging.info('-------------------RUNNING-------------------')
-helper.follow_until_halt(v=50,
+# # #
+# # # --------------------------------------------------------------------
+# # # MANUAL SETTINGS
+# # # --------------------------------------------------------------------
+# #
+# # # --------------------------------------------------------------------
+# # # START
+# # # --------------------------------------------------------------------
+# logging.info('-------------------RUNNING-------------------')
+diff_position = helper.follow_until_halt(v=20,
                    desired_col=MIDPOINT,
-                   desired_distance=300)
+                   desired_distance=150)
+original_forward_heading = gyro.value()
+#
 gyro.mode = 'GYRO-CAL'  # calibrate the gyro first
 logging.info('turning 90degrees cw')
-helper.turn_CW(v=30, angle=90, motor='WHEEL')
-time.sleep(2)
-#helper.turn_CCW(v=30, angle=90, motor='WHEEL')
+helper.turn_CW(v=30, angle=90, motor='ROBOT')
 #time.sleep(2)
-#helper.turn_CW(v=30, angle=90, motor='SERVO')
+# helper.turn_CCW(v=30, angle=90, motor='ROBOT')
+# time.sleep(2)
+# helper.turn_CW(v=20, angle=90, motor='SERVO')
+helper.turn_CCW(v=20, angle=90, motor='SERVO')
 #time.sleep(2)
-helper.turn_CCW(v=30, angle=90, motor='SERVO')
-helper.move_in_range(50,300,500)
+helper.move_in_range(30, original_forward_heading + 90,200)
+#time.sleep(2)
+helper.blind_forward(30, diff_position)
+#time.sleep(2)
+helper.turn_CCW(v=30, angle = abs(gyro.value()-original_forward_heading), motor='ROBOT')
+#time.sleep(2)
+helper.blind_forward(30, diff_position+50)
+#time.sleep(2)
+helper.move_in_range(30, original_forward_heading,350)
+#time.sleep(2)
+helper.blind_forward(30, diff_position)
+helper.turn_CCW(v=30, angle=abs(original_forward_heading-90), motor='ROBOT')
+helper.blind_forward(30, diff_position)
+
+
 
 exit()

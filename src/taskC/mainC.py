@@ -37,64 +37,140 @@ L.connected
 R.connected
 L.reset()  # reset the settings
 R.reset()
-<<<<<<< HEAD
 L.duty_cycle_sp = 40
 R.duty_cycle_sp = 40
 servo.connected
 servo.reset()
-servo.speed_sp = 40
+servo.duty_cycle_sp = 20
 # SENSORS
 col.connected
 col.mode = 'COL-REFLECT'
-gyro.connected
-gyro.mode = 'GYRO-CAL'
+# gyro.connected
+# gyro.mode = 'GYRO-CAL'
 us.connected
 us.mode = 'US-DIST-CM'
 
 # --------------------------------------------------------------------
 # CALIBRATION
 # --------------------------------------------------------------------
-# ev3.Sound.speak('hello').wait()
-# ev3.Sound.speak('Calibrating, put on desired').wait()
-MIDPOINT = col.value()
-# ev3.Sound.speak('Done').wait()
+ev3.Sound.speak('hello').wait()
+ev3.Sound.speak('Calibrating, WHITE').wait()
+while True:
+    if io.btn.backspace:
+        WHITE = col.value()
+        ev3.Sound.speak('Done').wait()
+        print('WHITE= {}'.format(WHITE))
+        break
+
+ev3.Sound.speak('Calibrating, MIDPOINT').wait()
+while True:
+    if io.btn.backspace:
+        MIDPOINT = col.value()
+        ev3.Sound.speak('Done').wait()
+        print('MIDPOINT = {}'.format(MIDPOINT))
+        break
+
 logging.info('-------------------CALIBRATION-------------------')
 logging.info('MIDPOINT = {}'.format(MIDPOINT))
-# # #
-# # # --------------------------------------------------------------------
-# # # MANUAL SETTINGS
-# # # --------------------------------------------------------------------
-# #
+
 # # # --------------------------------------------------------------------
 # # # START
 # # # --------------------------------------------------------------------
-# logging.info('-------------------RUNNING-------------------')
-diff_position = helper.follow_until_halt(v=20,
+logging.info('-------------------RUNNING-------------------')
+logging.info('follow the line until object at desired_distance found')
+# -----------------------------------------------------
+diff_position = helper.follow_until_dist(v=20,
                    desired_col=MIDPOINT,
                    desired_distance=150)
-original_forward_heading = gyro.value()
-#
+# HEADING FORWARD
+gyro.connected
 gyro.mode = 'GYRO-CAL'  # calibrate the gyro first
-logging.info('turning 90degrees cw')
-helper.turn_CW(v=30, angle=90, motor='ROBOT')
-#time.sleep(2)
-# helper.turn_CCW(v=30, angle=90, motor='ROBOT')
-# time.sleep(2)
-# helper.turn_CW(v=20, angle=90, motor='SERVO')
-helper.turn_CCW(v=20, angle=90, motor='SERVO')
-#time.sleep(2)
-helper.move_in_range(30, original_forward_heading + 90,200)
-#time.sleep(2)
-helper.blind_forward(30, diff_position)
-#time.sleep(2)
-helper.turn_CCW(v=30, angle = abs(gyro.value()-original_forward_heading), motor='ROBOT')
-#time.sleep(2)
-helper.blind_forward(30, diff_position+50)
-#time.sleep(2)
-helper.move_in_range(30, original_forward_heading,350)
-#time.sleep(2)
-helper.blind_forward(30, diff_position)
-helper.turn_CCW(v=30, angle=abs(original_forward_heading-90), motor='ROBOT')
-helper.blind_forward(30, diff_position)
+time.sleep(2)
+gyro.mode = 'GYRO-ANG'
+robot_forward_heading = gyro.value()
+robot_right = robot_forward_heading + 90
+robot_left  = robot_forward_heading - 90
 
+servo_forward = servo.position
+
+logging.info('reference heading = {}'.format(robot_forward_heading))
+
+logging.info('turning 90degrees cw')
+helper.turn_CW(v=30, angle=robot_right-gyro.value(), motor='ROBOT')
+time.sleep(2)
+
+logging.info('turn servo 90 degrees')
+# TODO: use function to find nearest
+helper.turn_CCW(v=20, angle=90, motor='SERVO')
+time.sleep(2)
+
+# ----->>>---------------------------------------------
+#  HEADING SIDEWAY
+logging.info('MOVING SIDEWAY')
+threshold = 150
+logging.info('Moving robot until threshold = {} is exceeded'.format(
+                threshold)) # once us detects surrounding more than 1.5cm away, halt
+helper.move_in_range(30,
+                    robot_right,
+                    threshold)
+time.sleep(2)
+
+logging.info('Moving the robot tacho count = {} to maintain distance from object boundary'.format(
+                diff_position))
+helper.blind_forward(v=30,
+                    tacho_counts = diff_position,
+                    expected_heading=robot_right)
+time.sleep(2)
+
+logging.info('Turning ROBOT CCW')
+helper.turn_CCW(v=30, angle=(gyro.value()-robot_forward_heading), motor='ROBOT')
+time.sleep(2)
+
+# --------------------------------------------------------
+# HEADING FORWARD
+logging.info('Moving the robot tacho count = {} for object to be in range'.format(
+                diff_position+100))
+helper.blind_forward(v=30,
+                    tacho_counts=diff_position+100,
+                    expected_heading = robot_forward_heading)
+time.sleep(2)
+
+logging.info('Moving forward until edge is found')
+helper.move_in_range(30,
+                    robot_forward_heading,
+                    threshold)
+time.sleep(2)
+
+logging.info('Moving the robot tacho count = {} for object to be in range'.format(
+                    diff_position+300))
+helper.blind_forward(v=30,
+                    tacho_counts=diff_position+300, # compensate the length of the robot
+                    expected_heading= robot_forward_heading)
+time.sleep(2)
+
+
+# -----<<<<---------------------------------------------
+# HEADING SIDEWAY
+logging.info('turning the ROBOT CCW by {}'.format(robot_forward_heading-90))
+helper.turn_CCW(v=30, angle=(robot_left-gyro.value()), motor='ROBOT')
+time.sleep(2)
+
+logging.info('find the line!')
+helper.forward_until_line(v=20,
+                    line_col = MIDPOINT,
+                    desired_heading = robot_left)
+time.sleep(2)
+
+
+logging.info('Turning the robot CW by {}'.format(robot_forward_heading-gyro.value()))
+helper.turn_CW(v=30, angle=robot_forward_heading-gyro.value())
+time.sleep(2)
+
+loggingg.info('Following the line').wait()
+control = Controller(kp, ki, kd, MIDPOINT, history)
+v = 30 # constant speed
+while col.value() < WHITE:  # run for 10 seconds
+    signal, err = control.control_signal(col.value())
+    L.run_timed(time_sp=50, duty_cycle_sp=v-signal) # going CCW
+    R.run_timed(time_sp=50, duty_cycle_sp=v+signal)
 exit()

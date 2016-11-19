@@ -41,32 +41,29 @@ col.mode = 'COL-REFLECT'
 gyro.connected
 gyro.mode = 'GYRO-ANG'
 
-BLACK = 8
-WHITE = 60
 # ------------------------------
 # Obtain BLACK and WHITE values
 # ------------------------------
-ev3.Sound.speak('black').wait()
-BLACK = col.value()
-while not io.btn.backspace:
-    BLACK = col.value()
-    print BLACK
-ev3.Sound.speak('ok').wait()
-
-ev3.Sound.speak('white').wait()
-WHITE = col.value()
-while not io.btn.backspace:
-    WHITE = col.value()
-    print WHITE
-ev3.Sound.speak('ok').wait()
-
-ev3.Sound.speak('midpoint').wait()
-midpoint = col.value()
-while not io.btn.backspace:
-    midpoint = col.value()
-    print midpoint
-ev3.Sound.speak('ok').wait()
-
+# ev3.Sound.speak('black').wait()
+# BLACK = col.value()
+# while not io.btn.backspace:
+#     BLACK = col.value()
+#     print BLACK
+#
+# ev3.Sound.speak('white').wait()
+# WHITE = col.value()
+# while not io.btn.backspace:
+#     WHITE = col.value()
+#     print WHITE
+#
+# ev3.Sound.speak('midpoint').wait()
+# midpoint = col.value()
+# while not io.btn.backspace:
+#     midpoint = col.value()
+#     print midpoint
+BLACK = 2
+WHITE = 60
+midpoint = 15
 # ------------------------------
 # Obtain desired angle
 # ------------------------------
@@ -82,12 +79,12 @@ v = 20
 R.time_sp = 100
 L.time_sp = 100
 
+turn = 80 # turns 90 degree relative
+
 # set colour attributes
-# midpoint = BLACK + 5
-turn = 75 # turns 90 degree relative
 
 def follow_line(kp, ki, kd, hist, midpoint, side):
-    # side = 1 for Right or 0 for Left
+    # side = 1 for Right side or 0 for Left side
     kp = kp
     ki = ki
     kd = kd
@@ -96,34 +93,43 @@ def follow_line(kp, ki, kd, hist, midpoint, side):
     motor_colour_control = controller(kp, ki, kd, desired_colour, hist)
 
     isEnd = False # follows line till end
-    if side: # right side
+    if side: # right side of line
         ev3.Sound.speak('right side').wait()
         while not io.btn.backspace and not isEnd:
             curr_colour = col.value()
             print curr_colour
-            if curr_colour >= (WHITE - 10): # pretty good..
+            if curr_colour >= (midpoint+20):
                 isEnd = True
-                ev3.Sound.speak('end of right line').wait()
+                ev3.Sound.speak('end of left line').wait()
                 break
             else:
                 signal, err = motor_colour_control.control_signal(curr_colour)
                 signal = abs(signal)
                 if err > 0: # too much white
                     R.run_timed(duty_cycle_sp=v+signal)
+                    logging.info('follow line: too much white, rotate R')
+                    print('white')
                     # L.run_timed(duty_cycle_sp=v-signal)
                 elif err < 0: # too much black
                     # R.run_timed(duty_cycle_sp=v-signal)
                     L.run_timed(duty_cycle_sp=v+signal)
+                    logging.info('follow line: too much black, rotate L')
+                    print('black')
                 else:
-                    pass
+                    R.run_timed(duty_cycle_sp=v)
+                    L.run_timed(duty_cycle_sp=v)
+                    logging.info('follow line: go forward')
+                    print('go forward')
+
+
     else: # left side
         ev3.Sound.speak('left side').wait()
         while not io.btn.backspace and not isEnd:
             curr_colour = col.value()
             print curr_colour
-            if curr_colour >= (WHITE - 10):
+            if curr_colour >= (midpoint+20): # pretty good..
                 isEnd = True
-                ev3.Sound.speak('end of left line').wait()
+                ev3.Sound.speak('end of right line').wait()
                 break
             else:
                 signal, err = motor_colour_control.control_signal(curr_colour)
@@ -135,7 +141,8 @@ def follow_line(kp, ki, kd, hist, midpoint, side):
                     R.run_timed(duty_cycle_sp=v+signal)
                     # L.run_timed(duty_cycle_sp=v-signal)
                 else:
-                    pass
+                    R.run_timed(duty_cycle_sp=v)
+                    L.run_timed(duty_cycle_sp=v)
 
 def rotate(kp, ki, kd, hist, turn, side):
     # this method rotates the robot in place
@@ -165,11 +172,19 @@ def rotate(kp, ki, kd, hist, turn, side):
             signal, err = sensor_gyro_control.control_signal(curr_angle)
             signal = abs(signal)
             if err > 0: # too much clockwise
-                R.run_timed(duty_cycle_sp=v+signal)
-                L.run_timed(duty_cycle_sp=-v-signal)
-            elif err < 0:
-                R.run_timed(duty_cycle_sp=-v-signal)
-                L.run_timed(duty_cycle_sp=v+signal)
+                R.polarity = 'normal'
+                L.polarity = 'inversed'
+                R.run_timed(speed_sp=v+signal)
+                L.run_timed(speed_sp=v+signal)
+                R.polarity = 'normal'
+                L.polarity = 'normal'
+            elif err < 0: # too much counter clockwise
+                R.polarity = 'inversed'
+                L.polarity = 'normal'
+                R.run_timed(speed_sp=v+signal)
+                L.run_timed(speed_sp=v+signal)
+                R.polarity = 'normal'
+                L.polarity = 'normal'
             else:
                 pass
 
@@ -179,95 +194,54 @@ def find_line(kp, ki, kd, hist):
     ki = ki
     kd = kd
     hist = hist
-    desired_angle = gyro.value() # maintains angle
-    sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
-
-    # set different gains here ...???
-    desired_colour = midpoint
+    desired_colour = midpoint # a bit more black... ?
     motor_color_control = controller(kp, ki, kd, desired_colour, hist)
 
     isBlack = False
     while not io.btn.backspace and not isBlack:
         curr_colour = col.value()
-        print curr_colour
         if curr_colour == midpoint:
             isBlack = True
             ev3.Sound.speak('Found line').wait()
+            ev3.Sound.speak(curr_colour).wait()
             break
         else:
             # find midpoint
             signal, err = motor_color_control.control_signal(curr_colour)
             signal = abs(signal)
             if err > 0: # too much white
-                R.run_timed(duty_cycle_sp=v+signal)
-                L.run_timed(duty_cycle_sp=v+signal)
-                signal_deg, err_deg = sensor_gyro_control.control_signal(curr_angle)
-                signal_deg = abs(signal_deg)
-                ########### mew ###########
-                if err_deg > 0: # too much clockwise
-                    R.run_timed(duty_cycle_sp=v+signal_deg)
-                    L.run_timed(duty_cycle_sp=v-signal_deg)
-                elif err_deg < 0:
-                    R.run_timed(duty_cycle_sp=v-signal_deg)
-                    L.run_timed(duty_cycle_sp=v+signal_deg)
-                else:
-                    pass
-                ##########new #############
+                R.polarity='normal'
+                L.polarity='normal'
+                R.run_timed(speed_sp=v+signal)
+                L.run_timed(speed_sp=v+signal)
+                R.polarity='normal'
+                L.polarity='normal'
+                logging.info('find line: too much white, go forward')
+                print('find line: too much white, go forward')
             elif err < 0: # too much black
-                R.run_timed(duty_cycle_sp=-v-signal)
-                L.run_timed(duty_cycle_sp=-v-signal)
-                signal_deg, err_deg = sensor_gyro_control.control_signal(curr_angle)
-                signal_deg = abs(signal_deg)
-                ####### new #########
-                if err_deg > 0: # too much clockwise
-                    R.run_timed(duty_cycle_sp=v+signal_deg)
-                    L.run_timed(duty_cycle_sp=v-signal_deg)
-                elif err_deg < 0:
-                    R.run_timed(duty_cycle_sp=v-signal_deg)
-                    L.run_timed(duty_cycle_sp=v+signal_deg)
-                else:
-                    pass
-                ###### new ############
+                R.polarity = 'inversed'
+                L.polarity = 'inversed'
+                R.run_timed(speed_sp=v+signal)
+                L.run_timed(speed_sp=v+signal)
+                R.polarity='normal'
+                L.polarity='normal'
+
+                logging.info('find line: too much black, go backwards')
+                print('find line: too much black, go backwards')
             else:
                 pass
 
-                # this thing is stupid so it cannot run both commands
-                # this is why is gets stuck..
-                # maybe use run_forever???
-
-            # curr_angle = gyro.value()
-            # print curr_angle
-            # signal, err = sensor_gyro_control.control_signal(curr_angle)
-            # signal = abs(signal)
-            # if err > 0: # too much clockwise
-            #     R.run_timed(duty_cycle_sp=v+signal)
-            #     L.run_timed(duty_cycle_sp=v-signal)
-            # elif err < 0: # too much counter clockwise
-            #     R.run_timed(duty_cycle_sp=v-signal)
-            #     L.run_timed(duty_cycle_sp=v+signal)
-            # else:
-            #     # R.run_timed(duty_cycle_sp=v+signal)
-            #     # L.run_timed(duty_cycle_sp=v+signal)
-            #     pass
-
-
-while not io.btn.backspace:
-    follow_line(.01,0,0,10,midpoint,1) # on left line, follows right side
-    rotate(.01,0,0,10,turn,1) # rotate to right
-    find_line(.01,0,0,10)
-    follow_line(.01,0,0,10,midpoint,0)
-    rotate(.01,0,0,10,turn,0) # rotate to left
-    find_line(.01,0,0,10)
-
-
-def fix_position(kp, ki, kd, hist, angle, side):
-    # angle = ANGLE at start
-    # side = 0 for left and 1 for right
+def fix_position(kp, ki, kd, hist, fix_angle, side):
+    # side = 0 for left line and 1 for right line
     kp = kp
     ki = ki
     kd = kd
     hist = hist
-    desired_angle = angle
+
+    if side: # on right line
+        desired_angle = gyro.value() - fix_angle # anti clockwise
+    else: # on left line
+        desired_angle = gyro.value() + fix_angle # clockwise
     sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
 
     desired_colour = midpoint
@@ -275,89 +249,56 @@ def fix_position(kp, ki, kd, hist, angle, side):
     isFixed = False
     while not io.btn.backspace and not isFixed:
         curr_angle = gyro.value()
+        print curr_angle
         curr_col = col.value()
-        if curr_angle == desired_angle and curr_col == desired_colour:
+        if curr_angle == desired_angle:
             isFixed = True
             ev3.Sound.speak('fixed').wait()
             break
         else:
             signal, err = sensor_gyro_control.control_signal(curr_angle)
             signal = abs(signal)
-            if err > 0:
-                R.run_timed(duty_cycle_sp=v+signal)
-                L.run_timed(duty_cycle_sp=v-signal)
-                signal_col, err_col = motor_col_control.control_signal(curr_col)
-                signal_col = abs(signal_col)
-                if err_col > 0: # too much white.. go forward
-                    R.run_timed(duty_cycle_sp=v+signal_col)
-                    L.run_timed(duty_cycle_sp=v+signal_col)
-                elif err_col < 0:
-                    R.run_timed(duty_cycle_sp=-v-signal_col)
-                    L.run_timed(duty_cycle_sp=-v-signal_col)
-                else:
-                    pass
-            elif err < 0:
-                R.run_timed(duty_cycle_sp=v-signal)
-                L.run_timed(duty_cycle_sp=v+signal)
-                signal_col, err_col = motor_col_control.control_signal(curr_col)
-                signal_col = abs(signal_col)
-                if err_col > 0: # too much white.. go forward
-                    R.run_timed(duty_cycle_sp=v+signal_col)
-                    L.run_timed(duty_cycle_sp=v+signal_col)
-                elif err_col < 0:
-                    R.run_timed(duty_cycle_sp=-v-signal_col)
-                    L.run_timed(duty_cycle_sp=-v-signal_col)
-                else:
-                    pass
-            else:
-                pass
+            signal_m ,err_m = motor_col_control.control_signal(curr_col)
+            signal_m = abs(signal_m)
 
-#
-#
-# def fix_position(): # on right side
-#     # gyro controller
-#     kp = .1
-#     ki = .01
-#     kd = .01
-#     hist = 5
-#     desired_angle = gyro.value() - 50 # for the right side
-#     sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
-#     isFixed = False
-#
-#     print desired_angle
-#     v = 15
-#     R.time_sp = 100
-#     L.time_sp = 100
-#
-#     kp_m = .1
-#     ki_m = .01
-#     kd_m = .01
-#     hist = 5
-#     desired_colour = BLACK+5 # more like the mid point...
-#     motor_col_control = controller(kp_m,ki_m,kd_m,desired_colour,hist)
-#
-#     while not io.btn.backspace and not isFixed:
-#         curr_angle = gyro.value()
-#         curr_col = col.value()
-#         if curr_angle == desired_angle and curr_col == desired_colour:
-#             isFixed = True
-#         else:
-#             signal, err = sensor_gyro_control.control_signal(curr_angle)
-#             signal = abs(signal)
-#             signal_m ,err_m = motor_col_control.control_signal(curr_col)
-#             signal_m = abs(signal_m)
-#
-#             # for right line....
-#             if err_m > 0: # too much white...
-#                 R.run_timed(duty_cycle_sp=v-signal_m)
-#                 L.run_timed(duty_cycle_sp=v+signal_m)
-#             elif err_m < 0: # too much black ...
-#                 R.run_timed(duty_cycle_sp=v+signal_m)
-#                 L.run_timed(duty_cycle_sp=v-signal_m)
-#
-#             if err > 0: # too muchclockwise
-#                 R.run_timed(duty_cycle_sp=v+signal)
-#                 L.run_timed(duty_cycle_sp=-v-signal)
-#             elif err < 0:
-#                 R.run_timed(duty_cycle_sp=-v-signal)
-#                 L.run_timed(duty_cycle_sp=v+signal)
+            if err > 0: # too much clockwise
+                R.polarity='normal'
+                L.polarity='inversed'
+                R.run_timed(speed_sp=v+signal)
+                L.run_timed(speed_sp=v+signal)
+                R.polarity='normal'
+                L.polarity='normal'
+            elif err < 0: # too much counter clockwise
+                R.polarity='inversed'
+                L.polarity='normal'
+                R.run_timed(speed_sp=v+signal)
+                L.run_timed(speed_sp=v+signal)
+                R.polarity='normal'
+                L.polarity='normal'
+
+            if err_m > 0: # too much white...
+                R.polarity='normal'
+                L.polarity='normal'
+                R.run_timed(speed_sp=v+signal_m)
+                L.run_timed(speed_sp=v+signal_m)
+                R.polarity='normal'
+                L.polarity='normal'
+            elif err_m < 0: # too much black..
+                R.polarity='inversed'
+                L.polarity='inversed'
+                R.run_timed(speed_sp=-v-signal_m)
+                L.run_timed(speed_sp=-v-signal_m)
+                R.polarity='normal'
+                L.polarity='normal'
+
+
+
+follow_line(.1,0,0,10,midpoint,1) # follow right side of line
+rotate(.005,0,0,10,turn,1) # rotate to right
+find_line(.0015,0,0.005,10)
+fix_position(.01,0,0,10,40,1) # fix angle for 40 degrees..
+follow_line(.1,0,0,10,midpoint,0) # follwo left side of line
+rotate(.005,0,0,10,turn,0) # rotate to left
+find_line(.0015,0,0.005,10)
+fix_position(.01,0,0,10,40,1)
+ev3.Sound.speak('doneeeee')

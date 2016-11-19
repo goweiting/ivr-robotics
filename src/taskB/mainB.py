@@ -14,7 +14,7 @@ import time
 import ev3dev.ev3 as ev3
 import helper as h
 import util.io as io
-from control import controller
+from util.control import Controller
 
 # -----------------
 # START
@@ -90,7 +90,7 @@ def follow_line(kp, ki, kd, hist, midpoint, side):
     kd = kd
     hist = hist
     desired_colour = midpoint
-    motor_colour_control = controller(kp, ki, kd, desired_colour, hist)
+    motor_colour_control = Controller(kp, ki, kd, desired_colour, hist)
 
     isEnd = False # follows line till end
     if side: # right side of line
@@ -158,7 +158,7 @@ def rotate(kp, ki, kd, hist, turn, side):
     else:
         ev3.Sound.speak('rotate left').wait()
         desired_angle = ANGLE - turn
-    sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
+    sensor_gyro_control = Controller(kp, ki, kd, desired_angle, hist)
 
     isRotated = False
     while not io.btn.backspace and not isRotated:
@@ -195,7 +195,7 @@ def find_line(kp, ki, kd, hist):
     kd = kd
     hist = hist
     desired_colour = midpoint # a bit more black... ?
-    motor_color_control = controller(kp, ki, kd, desired_colour, hist)
+    motor_color_control = Controller(kp, ki, kd, desired_colour, hist)
 
     isBlack = False
     while not io.btn.backspace and not isBlack:
@@ -242,10 +242,10 @@ def fix_position(kp, ki, kd, hist, fix_angle, side):
         desired_angle = gyro.value() - fix_angle # anti clockwise
     else: # on left line
         desired_angle = gyro.value() + fix_angle # clockwise
-    sensor_gyro_control = controller(kp, ki, kd, desired_angle, hist)
+    sensor_gyro_control = Controller(kp, ki, kd, desired_angle, hist)
 
     desired_colour = midpoint
-    motor_col_control = controller(kp, ki, kd, desired_colour, hist)
+    motor_col_control = Controller(kp, ki, kd, desired_colour, hist)
     isFixed = False
     while not io.btn.backspace and not isFixed:
         curr_angle = gyro.value()

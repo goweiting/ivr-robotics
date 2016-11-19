@@ -1,241 +1,245 @@
+# --------------------------------------------------------------
+# Define useful functions for taskB
+# --------------------------------------------------------------
+
+# imports
 import logging
-import io as io
 
-motA = io.motA
-motB = io.motB
+import ev3dev.ev3 as ev3
+import util.io as io
+from util.control import Controller
+from util.observer import Listener, Subject
 
+# global vars
+L = io.motA
+R = io.motB
+servo = io.servo
+us = io.us
+gyro = io.gyro
+col = io.col
 
-def forward(time_sp):
+def follow_left_line_till_end(v, midpoint, desired_col):
+    # follows left line, stays on right side
+    # desired_col = 'white' which it stops
+    global L, R, col
 
-    # Using color sensor, detect the reflected light (0 to 100) with 100 being high intensity (white) and 0 being low intensity (black)
-    #
-    # When detected with a low intensity surface, command the wheels to move using the given `duty_cycle_sp` and `time_sp`.
-    # The `threshold` argument will determine how low this intensity will be
+    ev3.Sound.speak('left line').wait() # follows right side
+    # TODO: tune this...
+    motor_col_control = Controller(.1, 0, 0,
+                                    midpoint,
+                                    history=10)
 
-    global motA, motB
+    while True:
 
-    logging.info('FORWARD')
-    motA.run_timed(time_sp=time_sp)
-    motB.run_timed(time_sp=time_sp)
+        if col.value() == desired_col: # if equals white then halt
+            ev3.Sound.speak('This is end of line').wait()
+            return
 
+        else:   # havent reached yet, continue following the line
+            signal, err = motor_col_control.control_signal(col.value())
 
-def adjust(time_sp, correction):
-    # Follows a Line
+            if err > 0:
+                print('too much WHITE')
+                R.run_timed(duty_cycle_sp=v+abs(signal))
+            elif err < 0:
+                print('too much black')
+                L.run_timed(duty_cycle_sp=v+abs(signal))
+            else:
+                R.run_timed(duty_cycle_sp=v)
+                R.run_timed(duty_cycle_sp=v)
+                print('midpoint')
 
-    if correction == 0:
-        pass
-    elif correction > 0:
-        # More white than expected
-        turn_left(time_sp, abs(correction))
-    elif correction < 0:
-        # More black than expected
-        turn_right(time_sp, abs(correction))
+        if io.btn.backspace:
+            break
 
+def follow_right_line_till_end(v, midpoint, desired_col):
+    # follows right line, stays on left side
+    # desired_col = 'white' which it stops
+    global L, R, col
 
-def turn_right(time_sp, correction):
-    # Speed up right motor to turn right
+    ev3.Sound.speak('right line').wait() # follows right side
+    # TODO: tune this...
+    motor_col_control = Controller(.1, 0, 0,
+                                    midpoint,
+                                    history=10)
 
-    global motB
-    mot = motB
+    while True:
 
-    prev = mot.duty_cycle_sp
-    new = prev + correction
-    mot.duty_cycle_sp = new
-    mot.run_timed(time_sp=time_sp)
-    logging.info('TURN RIGHT, duty = {}'.format(new))
-    mot.duty_cycle_sp = prev
+        if col.value() == desired_col: # if equals white then halt
+            ev3.Sound.speak('This is end of line').wait()
+            return
 
+        else:   # havent reached yet, continue following the line
+            signal, err = motor_col_control.control_signal(col.value())
+            if err > 0:
+                print('too much WHITE')
+                L.run_timed(time_sp=100, duty_cycle_sp=v+abs(signal))
+            elif err < 0:
+                print('too much black')
+                R.run_timed(time_sp=100, duty_cycle_sp=v+abs(signal))
+            else:
+                R.run_timed(time_sp=100, duty_cycle_sp=v)
+                R.run_timed(time_sp=100, duty_cycle_sp=v)
+                print('midpoint')
 
-def turn_left(time_sp, correction):
-    # Speed up left motor to turn left
-
-    global motA
-    mot = motA
-
-    prev = mot.duty_cycle_sp
-    new = prev + correction
-    mot.duty_cycle_sp = new
-    mot.run_timed(time_sp=time_sp)
-    logging.info('TURN LEFT, duty = {}'.format(new))
-    mot.duty_cycle_sp = prev
-
-
-# Isabella's method
-def rotate_clockwise(time_sp, correction):
-    global motA, motB
-
-    prevA = motA.duty_cycle_sp
-    newA = prevA + correction
-    motA.duty_cycle_sp = newA
-    prevB = motB.duty_cycle_sp
-    newB = prevB + correction
-    newB = -newB
-    motB.duty_cycle_sp = newB
-
-    motA.run_timed(time_sp=time_sp)
-    motB.run_timed(time_sp=time_sp)
-    logging.info(
-        'ROTATE CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
-
-    motA.duty_cycle_sp = prevA
-    motB.duty_cycle_sp = prevB
-
-
-def rotate_counter_clockwise(time_sp, correction):
-    global motA, motB
-
-    prevA = motA.duty_cycle_sp
-    newA = prevA + correction
-    newA = -newA
-    motA.duty_cycle_sp = newA
-    prevB = motB.duty_cycle_sp
-    newB = prevB + correction
-    motB.duty_cycle_sp = newB
-
-    motA.run_timed(time_sp=time_sp)
-    motB.run_timed(time_sp=time_sp)
-    logging.info(
-        'ROTATE COUNTER-CLOCKSIWSE, dutyA = {}, dutyB = {}'.format(newA, newB))
-
-    motA.duty_cycle_sp = prevA
-    motB.duty_cycle_sp = prevB
+        if io.btn.backspace:
+            break
 
 
-def adjust_rotation(time_sp, correction):
-    if correction == 0:
-        pass
-    elif correction > 0:
-        # too much rotation to the right
-        rotate_counter_clockwise(time_sp, abs(correction))
-    elif correction < 0:
-        # not enought rotation or too much rotation to the left
-        rotate_clockwise(time_sp, abs(correction))
+def rotate(v, desired_gyro_val):
+    # rotate to the desired  gyro val
+    global L, R, gyro
+    gyro.mode = 'GYRO-ANG'
+    ev3.Sound.speak('Current gyro value is {}'.format(gyro.value()))
+    ev3.Sound.speak('Desired angle is {}'.format(desired_angle))
+
+    # TODO: tune this
+    sensor_gyro_control = Controller(.1, 0, 0,
+                                    desired_gyro_val,
+                                    history=10)
+
+    while True:
+        signal, err = sensor_gyro_control.control_signal(gyro.value())
+
+        if err == 0: # right on spot
+            ev3.Sound.speak('I have rotated').wait()
+            R.polarity='normal'
+            L.polarity='normal'
+            return
+
+        elif err > 0: # too much clockwise
+            R.polarity='normal'
+            L.polarity='inversed'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            R.polarity='normal'
+            L.polarity='normal'
+
+        elif err < 0: # too much anticlockwise
+            R.polarity='inversed'
+            L.polarity='normal'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            R.polarity='normal'
+            L.polarity='normal'
 
 
-def go_forward(time_sp, correction):
-    global motA, motB
-    prevA = motA.duty_cycle_sp
-    newA = prevA - correction  # negative correction
-    motA.duty_cycle_sp = newA
-    prevB = motB.duty_cycle_sp
-    newB = prevB - correction
-    motB.duty_cycle_sp = newB
+def find_line(v, desired_col):
+    # find line with colour == midpoint
+    # tries to remain a straight line
+    global L, R, gyro, col
 
-    motA.run_timed(time_sp=time_sp)
-    motB.run_timed(time_sp=time_sp)
-    logging.info('MOVE FORWARD, dutyA = {}, dutyB={}'.format(newA, newB))
+    ev3.Sound.speak('find line').wait()
+    # TODO: tune this
+    motor_col_control = Controller(.1, 0, 0,
+                                    desired_col,
+                                    history=10)
 
-    motA.duty_cycle_sp = prevA
-    motB.duty_cycle_sp = prevB
+    desired_angle = gyro.value() # initial angle
+    sensor_gyro_control = Controller(.1, 0, 0,
+                                    desired_angle,
+                                    history=10)
+    while True:
+        # first adjust angle
+        signal_g, err_g = sensor_gyro_control.control_signal(gyro.value())
 
+        if err_g > 0: # too much clockwise
+            R.polarity='normal'
+            L.polarity='inversed'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            R.polarity='normal'
+            L.polarity='normal'
 
-def go_backward(time_sp, correction):
-    global motA, motB
-    prevA = motA.duty_cycle_sp
-    newA = prevA - correction
-    newA = -newA
-    motA.duty_cycle_sp = newA
-    prevB = motB.duty_cycle_sp
-    newB = prevB - correction
-    newB = -newB
-    motB.duty_cycle_sp = newB
+        elif err_g < 0: # too much anticlockwise
+            R.polarity='inversed'
+            L.polarity='normal'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            R.polarity='normal'
+            L.polarity='normal'
 
-    motA.run_timed(time_sp=time_sp)
-    motB.run_timed(time_sp=time_sp)
-    logging.info('MOVE BACKWARDS, dutyA = {}, dutyB={}'.format(newA, newB))
+        # then go ahead
+        signal, err = motor_col_control.control_signal(col.value())
 
-    motA.duty_cycle_sp = prevA
-    motB.duty_cycle_sp = prevB
+        if err == 0: # right on midpoint
+            ev3.Sound.speak('Found line').wait()
+            R.polarity='normal'
+            L.polarity='normal'
+            return
 
+        elif err > 0: # too much white - move forward
+            R.polarity='normal'
+            L.polarity='normal'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal))
 
-def adjust_forward(time_sp, correction):
-    if correction == 0:
-        pass
-    elif correction > 0:
-        # go too far
-        go_backward(time_sp, correction)
-    elif correction < 0:
-        # not enough distance
-        go_forward(time_sp, correction)
-
-# """
-# This method rotates the robot according to the gyro Reading
-# """
-# def adjust_gyro(time_sp, correction):
-#     if correction == 0:
-#         pass
-#     elif correction > 0:
-#         # More white than expected
-#         turn_right(time_sp, abs(correction))
-#     elif correction < 0:
-#         # More black than expected
-#         turn_left(time_sp, abs(correction))
-
-
-# def adjust_forward(time_sp, correction):
-#     global motA, motB
-#     if correction == 0:
-#         pass
-#     elif correction > 0:
-#         prevA = motA.duty_cycle_sp
-#         newA = prevA + correction
-#         motA.duty_cycle_sp = newA
-#         prevB = motB.duty_cycle_sp
-#         newB = prevB + correction
-#         motB.duty_cycle_sp = newB
-#
-#         motA.run_timed(time_sp=time_sp)
-#         motB.run_timed(time_sp=time_sp)
-#
-#         motA.duty_cycle_sp = prevA
-#         motB.duty_cycle_sp = prevB
-#     # elif correction < 0: ???????
-#
-#
+        elif err < 0: # too much black - move backwards
+            R.polarity='inversed'
+            L.polarity='inversed'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            R.polarity='normal'
+            L.polarity='normal'
 
 
-# """
-# This method attempts to rotate the robot 'in place'
-# """
-# def rotate_right(time_sp, correction):
-#     global motA, motB
-#     motA = motA
-#     motB = motB
-#
-#     # rotate right wheel backwards
-#     prevB = motB.duty_cycle_sp
-#     newB = prevB + correction
-#     motB.duty_cycle_sp = -newB # go backwards
-#
-#     # rotate left wheel forwards
-#     prevA = motA.duty_cycle_sp
-#     newA = prevA + correction
-#     motA.duty_cycle_sp = newA # go forward
-#
-#     motB.run_timed(time_sp=time_sp)
-#     motA.run_timed(time_sp=time_sp)
-#
-#     motA.duty_cycle_sp = prevA
-#     motB.duty_cycle_sp = prevB
-#
-#
-# def rotate_left(time_sp, correction):
-#     global motA, motB
-#     motA = motA
-#     motB = motB
-#
-#     # rotate left wheel backwards
-#     prevA = motA.duty_cycle_sp
-#     newA = prevA + correction
-#     motA.duty_cycle_sp = -newA # go backwards
-#
-#     # rotate right wheel forwards
-#     prevB = motB.duty_cycle_sp
-#     newB = prevB + correction
-#     motB.duty_cycle_sp = newB # go forward
-#
-#     motA.run_timed(time_sp=time_sp)
-#     motB.run_timed(time_sp=time_sp)
-#
-#     motA.duty_cycle_sp = prevA
-#     motB.duty_cycle_sp = prevB
+def fix_position(v, desired_fix_angle, desired_col):
+    # fix_angle : amount of angle to rotate
+    # desired_col = midpoint to remain on spot
+    # side = 1 for right line and 0 for left line
+    global L, R, gyro, col
+
+    ev3.Sound.speak('fix position').wait()
+
+    desired_angle = gyro.value() + desired_fix_angle
+
+    # TODO: tune this
+    motor_col_control = Controller(.1, 0, 0,
+                                    desired_col,
+                                    history=10)
+
+    sensor_gyro_control = Controller(.1, 0, 0,
+                                    desired_angle,
+                                    history=10)
+
+    while True:
+        signal_g, err_g = sensor_gyro_control.control_signal(gyro.value())
+
+        if err_g == 0: # rotated ok!
+            ev3.Sound.speak('fixed angle').wait()
+            R.polarity='normal'
+            L.polarity='normal'
+            return
+
+        elif err_g > 0: # too much clockwise
+            R.polarity='normal'
+            L.polarity='inversed'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal_g))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal_g))
+            R.polarity='normal'
+            L.polarity='normal'
+
+        elif err < 0: # too much counter clockwise
+            R.polarity='inversed'
+            L.polarity='normal'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal_g))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal_g))
+            R.polarity='normal'
+            L.polarity='normal'
+
+        signal, err = motor_col_control.control_signal(col.value())
+
+        if err > 0: # too much white
+            R.polarity='normal'
+            L.polarity='normal'
+            R.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            L.run_timed(time_sp=100, speed_sp=v+abs(signal))
+            R.polarity='normal'
+            L.polarity='normal'
+        elif err < 0: # too much black..
+            R.polarity='inversed'
+            L.polarity='inversed'
+            R.run_timed(time_sp=100, speed_sp=-v-abs(signal_m))
+            L.run_timed(time_sp=100, speed_sp=-v-abs(signal_m))
+            R.polarity='normal'
+            L.polarity='normal'

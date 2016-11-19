@@ -8,18 +8,16 @@
 #
 
 # imports
-import logging
-import time
-import os
+# import logging
 
 # local import
 import ev3dev.ev3 as ev3
-from util import io
-from util.control import Controller
+import io as io
+from control import Controller
 
-logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p',
-                    level=logging.DEBUG)
+# logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
+#                     datefmt='%m/%d/%Y %I:%M:%S %p',
+#                     level=logging.DEBUG)
 
 # -----------------
 # START
@@ -38,7 +36,7 @@ while True:
     if io.btn.backspace:
         WHITE = col.value()
         ev3.Sound.speak('Done').wait()
-        logging.info('WHITE= {}'.format(WHITE))
+        print('WHITE= {}'.format(WHITE))
         break
 
 ev3.Sound.speak('Calibrating, MIDPOINT').wait()
@@ -46,7 +44,7 @@ while True:
     if io.btn.backspace:
         MIDPOINT = col.value()
         ev3.Sound.speak('Done').wait()
-        logging.info('MIDPOINT = {}'.format(MIDPOINT))
+        print('MIDPOINT = {}'.format(MIDPOINT))
         break
 
 # MOTOR:
@@ -54,17 +52,17 @@ L.connected
 R.connected
 L.reset()  # reset the settings
 R.reset()
-L.duty_cycle_sp = 20
-R.duty_cycle_sp = 20
+L.speed_sp = 20
+R.speed_sp = 20
 
 # SENSORS
 col.connected
 col.mode = 'COL-REFLECT'
 
 kp = 1
-ki = 0
-kd = 0
-history = 1
+ki = .01
+kd = .5
+history = 10
 
 control = Controller(kp, ki, kd, MIDPOINT, history)
 # ----------------
@@ -76,13 +74,14 @@ control = Controller(kp, ki, kd, MIDPOINT, history)
 v = 30 # constant speed
 while col.value() < WHITE:  # run for 10 seconds
     signal, err = control.control_signal(col.value())
-    L.run_timed(time_sp=100, speed_sp=v+signal) # going CW
-    R.run_timed(time_sp=100, speed_sp=v-signal)
+    L.run_timed(time_sp=50, duty_cycle_sp=v+signal) # going CW
+    R.run_timed(time_sp=50, duty_cycle_sp=v-signal)
 
-    logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+    print('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
         col.value(), signal, err, L.speed_sp, R.speed_sp))
     # err_vals += str(err) + '\n'
-
+    if io.btn.backspace: # circuit breaker  ``
+        break
 # f.write(err_vals)
 # f.close()
 

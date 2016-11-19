@@ -7,9 +7,9 @@ import logging
 import time
 import os
 import ev3dev.ev3 as ev3
-import utilities as util
-import io as io
-from control import controller
+import util.time_ms as timer
+import util.io as io
+from util.control import Controller
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -41,23 +41,24 @@ gyro = io.gyro
 # MIDPOINT = (WHITE-BLACK)/2 + BLACK
 
 
-def run_experiment(speed, kp, ki, kd, history, filename):
+def run_experiment(duty, kp, ki, kd, history, filename):
     """
-    speed   -   the constant speed
+    duty -   the constant duty_cycle_sp
     kp      -   proportion constant
     ki      -   integral constant
     kd      -   derivative constant
-    history -   Number of past values to consider for history
+    history -   Number of past errors to consider for integral term
     filename -  filename to write the error values to
     """
+
     global col, gyro, L, R
     # MOTOR:
     L.connected
     R.connected
     L.reset()  # reset the settings
     R.reset()
-    L.duty_cycle_sp = 40
-    R.duty_cycle_sp = 40
+    L.speed_sp = 40
+    R.speed_sp = 40
 
     # SENSORS
     col.connected
@@ -66,26 +67,27 @@ def run_experiment(speed, kp, ki, kd, history, filename):
     gyro.mode = 'GYRO-CAL'
     gyro.mode = 'GYRO-ANG'  # calibrate the sensor
 
-    r = col.value()
-    control = controller(kp, ki, kd, r, history)
+    r = col.value() # the midpoint that the color sensor should maintain
+    control = controller(kp, ki, kd, r, history) # use the color controller to guide the amount of duty given to each motor
     # ----------------
     # Set up writing file
     # ----------------
-    err_vals = 'kp = {}, ki = {}, kd = {} r = {}\n'.format(
+    err_vals = 'kp = {}, ki = {}, kd = {}\n'.format(
         kp, ki, kd, control.desired)
     f = open(filename, 'w')
 
-    v = speed  # constant speed
+    v = duty  # constant speed
     t_start = util.timestamp_now()
     t_now = util.timestamp_now()
 
     while (t_now - t_start < 20E3):  # run for 10 seconds
         signal, err = control.control_signal(col.value())
-        L.run_timed(time_sp=100, speed_sp=v + signal)
-        R.run_timed(time_sp=100, speed_sp=v - signal)
+        L.run_timed(time_sp=100, duty_cycle_sp=v + signal)
+        R.run_timed(time_sp=100, duty_cycle_sp=v - signal)
 
         logging.info('COL = {},\tGYRO = {},\tcontrol = {},err={}, \tL = {},\tR = {}'.format(
             col.value(), gyro.value(), signal, err, L.speed_sp, R.speed_sp))
+        # file writing
         err_vals += str(err) + '\n'
         t_now = util.timestamp_now()
 

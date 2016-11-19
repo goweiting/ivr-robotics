@@ -13,7 +13,7 @@ import time
 
 import ev3dev.ev3 as ev3
 import helper as h
-import io as io
+import util.io as io
 from control import controller
 
 # -----------------

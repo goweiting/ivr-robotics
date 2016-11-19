@@ -1,23 +1,26 @@
 #! /usr/bin/env python
 
 # In task A:
-# Develop an algorithm to follow a curved black line on top of a white piece of paper. Robot will start wheerever you would like to place it on the lin. Marks will be given for how smoothly the robot follows the line.
+# Develop an algorithm to follow a curved black line on top of a white piece of
+# paper. Robot will start wheerever you would like to place it on the lin.
+# Marks will be given for how smoothly the robot follows the line.
 #
 # GOAL:
-# Follow the line to the end before stopping and indicating it is finished (by speaking out that it has finished following the line).
+# Follow the line to the end before stopping and indicating it is finished (by
+# speaking out that it has finished following the line).
 #
 
 # imports
-# import logging
+import logging
 
 # local import
 import ev3dev.ev3 as ev3
-import io as io
-from control import Controller
+import util.io as io
+from util.control import Controller
 
-# logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
-#                     datefmt='%m/%d/%Y %I:%M:%S %p',
-#                     level=logging.DEBUG)
+logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    level=logging.DEBUG)
 
 # -----------------
 # START
@@ -68,8 +71,8 @@ control = Controller(kp, ki, kd, MIDPOINT, history)
 # ----------------
 # Set up writing file
 # ----------------
-# err_vals = 'kp = {}, ki = {}, kd = {} r = {}\n'.format(kp, ki, kd, control.desired)
-# f = open('./vals.txt', 'w')
+err_vals = 'kp = {}, ki = {}, kd = {} r = {}\n'.format(kp, ki, kd, control.desired)
+f = open('./vals.txt', 'w')
 
 v = 30 # constant speed
 while col.value() < WHITE:  # run for 10 seconds
@@ -82,8 +85,7 @@ while col.value() < WHITE:  # run for 10 seconds
     # err_vals += str(err) + '\n'
     if io.btn.backspace: # circuit breaker  ``
         break
-# f.write(err_vals)
-# f.close()
-
+f.write(err_vals)
+f.close()
 
 # END

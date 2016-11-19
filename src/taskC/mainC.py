@@ -37,11 +37,12 @@ L.connected
 R.connected
 L.reset()  # reset the settings
 R.reset()
+<<<<<<< HEAD
 L.duty_cycle_sp = 40
 R.duty_cycle_sp = 40
 servo.connected
 servo.reset()
-servo.duty_cycle_sp = 40
+servo.speed_sp = 40
 # SENSORS
 col.connected
 col.mode = 'COL-REFLECT'
@@ -95,7 +96,5 @@ helper.move_in_range(30, original_forward_heading,350)
 helper.blind_forward(30, diff_position)
 helper.turn_CCW(v=30, angle=abs(original_forward_heading-90), motor='ROBOT')
 helper.blind_forward(30, diff_position)
-
-
 
 exit()

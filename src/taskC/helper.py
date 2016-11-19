@@ -60,9 +60,14 @@ def turn_CW(v, angle, motor):
         turn_control = Controller(.3, 0, 0,
                                   angle,
                                   history=10)
+<<<<<<< HEAD
         servo.polarity = 'normal'
         while True:
             # servo.run_timed(time_sp=100, duty_cycle_sp=v + signal)  # changed from speed_sp
+=======
+        while True:
+            servo.run_timed(time_sp=100, duty_cycle_sp=v + signal)  # changed from speed_sp
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
             signal, err = turn_control.control_signal(servo.position)
             servo.run_timed(time_sp=100, speed_sp=v + abs(signal))
             logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
@@ -71,6 +76,11 @@ def turn_CW(v, angle, motor):
                 servo.stop()
                 servo.speed_sp = v
                 return
+<<<<<<< HEAD
+=======
+            if io.btn.backspace:
+                break
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
 
 
 def turn_CCW(v, angle, motor):
@@ -111,6 +121,7 @@ def turn_CCW(v, angle, motor):
                 return
 
     elif motor == 'SERVO':
+<<<<<<< HEAD
         angle = servo.position + angle # desired angle
         turn_control = Controller(.1, 0, 0,
                                   angle,
@@ -119,15 +130,32 @@ def turn_CCW(v, angle, motor):
         while True:
             signal, err = turn_control.control_signal(servo.position)
             servo.run_timed(time_sp=100, speed_sp=v + abs(signal))
+=======
+        angle = servo.position - angle 
+        turn_control = Controller(.3, 0, 0,
+                                  angle,
+                                  history=10)
+        while True:
+            signal, err = turn_control.control_signal(servo.position)
+            servo.run_timed(time_sp=100, duty_cycle_sp=v + signal)
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
             logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
                 servo.position, signal, err, servo.speed_sp))
             if abs(signal) <= 1 or io.btn.backspace:  # tolerance
                 servo.stop()
+<<<<<<< HEAD
                 # reset the settings
                 speed_sp=v
                 servo.polarity = 'normal'
                 return
 
+=======
+                return
+
+            if io.btn.backspace:
+                break
+
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
 
 def follow_until_halt(v, desired_col, desired_distance):
     """
@@ -143,7 +171,11 @@ def follow_until_halt(v, desired_col, desired_distance):
         'Following black line until distance {}'.format(desired_distance)).wait()
     # defines the line control so that the motor follows the line
     # TODO: need to tune this!
+<<<<<<< HEAD
     line_control = Controller(.5, 0, 0,
+=======
+    line_control = Controller(1, 0, 0,
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
                               desired_col,
                               history=10)  # a P controller
     distance_subject = Subject('distance_subject')
@@ -159,10 +191,13 @@ def follow_until_halt(v, desired_col, desired_distance):
     while not diff_position:
 
         distance_subject.set_val(us.value())  # update the subject
+<<<<<<< HEAD
         if not initial_position and us.value() in range(distance_to_record-5,distance_to_record+5):
             # ev3.Sound.speak('I will note this position {}'.format(L.position)).wait()
             initial_position = L.position
             logging.info('I will note this position {}'.format(initial_position))
+=======
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
 
         if halt_.get_state():  # need to halt since distance have reached
             ev3.Sound.speak('Object detected at range {}'.format(
@@ -178,13 +213,23 @@ def follow_until_halt(v, desired_col, desired_distance):
 
         else:  # havent reach yet, continnue following the line
             signal, err = line_control.control_signal(col.value())
+<<<<<<< HEAD
             L.run_timed(time_sp=100, duty_cycle_sp=v - signal)
             R.run_timed(time_sp=100, duty_cycle_sp=v + signal)
+=======
+            L.run_timed(time_sp=1000, duty_cycle_sp=v - signal)
+            R.run_timed(time_sp=1000, duty_cycle_sp=v + signal)
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
 
         if io.btn.backspace:
             break
 
+<<<<<<< HEAD
 def move_in_range(v, desired_angle, out_of_range_value):
+=======
+
+def move_in_range(v, desired_range, out_of_range_value):
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
     """
     The goal is to move along the boundary of the object
     The boundary of the object is defined by the :param desired_range. Hence
@@ -196,11 +241,20 @@ def move_in_range(v, desired_angle, out_of_range_value):
     """
 
     global L, R, us, gyro
+<<<<<<< HEAD
     #ev3.Sound.speak(
     #    'Tracing the object and maintain the range of {}'.format(desired_range)).wait()
     # try with just P controller first
     desired_angle_control = Controller(1, 0, 0,
                                        desired_angle,
+=======
+    gyro.mode ='GYRO-ANG'
+    ev3.Sound.speak(
+        'Tracing the object and maintain the range of {}'.format(desired_range)).wait()
+    # try with just P controller first
+    desired_range_control = Controller(1, 0, 0,
+                                       desired_range,
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
                                        history=10)
     range_subject = Subject('range_subject')
     move_ = Listener('move_', range_subject,
@@ -208,10 +262,15 @@ def move_in_range(v, desired_angle, out_of_range_value):
 
     while True:
         range_subject.set_val(us.value()) # update
+<<<<<<< HEAD
+=======
+
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
         if move_.get_state():  # move forward x distance when out of range value is detected
             # inform user
             ev3.Sound.speak('Edge of the object detected').wait()
             logging.info('Edge detected!')
+<<<<<<< HEAD
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             return
@@ -230,11 +289,23 @@ def move_in_range(v, desired_angle, out_of_range_value):
 
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
             gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+=======
+            # TODO: call the function to rotate the wheel forward for some distance
+
+            return
+
+        else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
+            signal, err = desired_range_control.control_signal(us.value())
+            L.run_timed(time_sp=1000, duty_cycle_sp=v - signal)
+            R.run_timed(time_sp=1000, duty_cycle_sp=v + signal)
+
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a
             # if range_subject.get_val() - us.value() > 10:
             # live update the angular motion using the gyro ang
 
         if io.btn.backspace:
             break
+<<<<<<< HEAD
 #
 # #
 # def blind_forward(tacho_counts):
@@ -319,3 +390,24 @@ def blind_forward(v,tacho_counts):
 #         # caclulate distance
 #         Ldist +=
 #         Rdist +=
+=======
+
+
+def blind_forward(distance):
+    """
+    given a distance, move the robot forward until the distance is achieved
+    It uses the odometer to calculate the distance
+    """
+    global L, R, gyro
+    L.stop_action = 'brake'
+    R.stop_action = 'brake'
+
+    Ldist = 0 # start from 0
+    Rdist = 0
+
+    # TODO: count_per_m or count_per_rot
+    while True:
+        # caclulate distance
+        Ldist +=
+        Rdist +=
+>>>>>>> d978309f11332aaabdf62e02058c3f3161e31f1a

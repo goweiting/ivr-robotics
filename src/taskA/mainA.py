@@ -64,28 +64,27 @@ col.mode = 'COL-REFLECT'
 kp = 1
 ki = 0
 kd = 0
-history = 5
+history = 1
 
 control = Controller(kp, ki, kd, MIDPOINT, history)
 # ----------------
 # Set up writing file
 # ----------------
-err_vals = 'kp = {}, ki = {}, kd = {} r = {}\n'.format(
-    kp, ki, kd, control.desired)
-f = open('./vals.txt', 'w')
+# err_vals = 'kp = {}, ki = {}, kd = {} r = {}\n'.format(kp, ki, kd, control.desired)
+# f = open('./vals.txt', 'w')
 
 v = 30 # constant speed
 while col.value() < WHITE:  # run for 10 seconds
     signal, err = control.control_signal(col.value())
-    L.run_timed(time_sp=100, speed_sp=v-signal)
-    R.run_timed(time_sp=100, speed_sp=v+signal)
+    L.run_timed(time_sp=100, speed_sp=v+signal) # going CW
+    R.run_timed(time_sp=100, speed_sp=v-signal)
 
     logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
         col.value(), signal, err, L.speed_sp, R.speed_sp))
-    err_vals += str(err) + '\n'
+    # err_vals += str(err) + '\n'
 
-f.write(err_vals)
-f.close()
+# f.write(err_vals)
+# f.close()
 
 
 # END

@@ -31,7 +31,7 @@ class Listener(object):
                 logging.info('{} TRIGGERED!!'.format(self._string))
 
         elif self.mode == 'GT':
-            if self.goal_state <= val:
+            if self.goal_state >= val:
                 self.state = True
                 logging.info('{} TRIGGERED!!'.format(self._string))
 
@@ -100,3 +100,4 @@ class Subject(object):
 
     def __repr__(self):
         return self.__str__()
+

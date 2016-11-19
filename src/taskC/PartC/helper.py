@@ -22,7 +22,7 @@ gyro = io.gyro
 col = io.col
 
 
-def turn_CW(v, angle, motor):
+def turn_CW(v, angle, motor): #turn clockwise
     """
     turn the robot on the spot by the desired_angle by referencing using the gyro value
     """
@@ -34,7 +34,7 @@ def turn_CW(v, angle, motor):
         'Turning {} clock wise {} degrees'.format(motor, angle)).wait()
     logging.info('Turning {} clock wise {} degrees'.format(motor, angle))
 
-    if motor == 'WHEEL':
+    if motor == 'WHEEL': #turning wheels
         current = gyro.value()
         angle = current + angle
         turn_control = Controller(.3, 0, 0.01,
@@ -57,14 +57,14 @@ def turn_CW(v, angle, motor):
                 R.polarity = 'normal'
                 break
 
-    elif motor == 'SERVO':
+    elif motor == 'SERVO': #turning the medium motor
         logging.info(servo.polarity)
         servo.polarity = 'normal'
         angle = servo.position + angle
-        turn_control = Controller(.3, 0, 0,
+        turn_control = Controller(.1, 0, 0, 
                                   angle,
                                   history=10)
-        signal, err = turn_control.control_signal(servo.position)
+        signal, err = turn_control.control_signal(servo.position) # get adjustment value and error value 
 
         while True:
             servo.run_timed(time_sp=100, speed_sp=v + abs(signal))
@@ -79,7 +79,7 @@ def turn_CW(v, angle, motor):
                 break
 
 
-def turn_CCW(v, angle, motor):
+def turn_CCW(v, angle, motor): #turn counter-clockwise 
     """
     turn the robot on the spot by the desired_angle by referencing using the gyro value
     """
@@ -119,7 +119,7 @@ def turn_CCW(v, angle, motor):
         logging.info(servo.polarity)
         servo.polarity = 'inversed'
         angle = servo.position + angle  # cause servo is weird
-        turn_control = Controller(.3, 0, 0,
+        turn_control = Controller(.1, 0, 0,
                                   angle,
                                   history=10)
         signal, err = turn_control.control_signal(servo.position)
@@ -138,7 +138,7 @@ def turn_CCW(v, angle, motor):
                 break
 
 
-def follow_until_halt(v, desired_col, desired_distance):
+def follow_until_halt(v, desired_col, desired_distance): # follow the line till the object is at desired_dist then stop
     """
     When called, robot will move follow the line
     :param: v - the speed at which the motor should travel at
@@ -176,27 +176,33 @@ def follow_until_halt(v, desired_col, desired_distance):
         if io.btn.backspace:
             break
 
-def move_in_range(v, desired_range, out_of_range_value):
+# maintaining the range going from left to right, if out of range- then move with (range) distance then stop (?) 
 
-    global L,R,us
-    ev3.Sound.speak('Tracing the object and maintain the range of {}'.format(desired_range)).wait()
-    desired_range_control = Controller(1, 0, 0, desired_range,  history=10) # try with just P controller first
-    range_subject = Subject('distance_subject')
-    move_ = Listener('move_', range_subject,
-                     out_of_range_value, 'GT')  # move when greater than out_of_range_value
+def move_in_range(v, desired_range, out_of_range_value)
 
-    while True:
+	global L,R,us 
+	ev.Sound.speak(
+	   'Tracing the object and maintain the range of {}'.format(desired_range)).wait() 
+	desired_range.control = Controller(1, 0, 0,
+				   desired_range,
+				   history=10) # try with just P controller first 
+        range_subject = Subject('distance_subject')
+        move_ = Listener('move_', distance_subject,
+                     out_of_range_value, 'GT')  # move when greater than out_of_range_value 
+
+        while True:
+        
         range_subject.set_val(us.value())
-
-        if move_.get_state():  # move forward x distance when out of range value is detected
-            ev3.Sound.speak('Edge of the object detected').wait()  # inform user
+          
+        if move_.get_state():  # move forward x distance when out of range value is detected  
+            ev3.Sound.speak('Edged of the object detected').wait()  # inform user
             logging.info('Edge detected!')
             return
-
+            
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
-            signal, err = desired_range_control.control_signal(us.value())
+            signal, err = line_control.control_signal(col.value())
             L.run_timed(time_sp=1000, speed_sp=v - signal)
             R.run_timed(time_sp=1000, speed_sp=v + signal)
 
-        if io.btn.backspace:
-	        break
+        if io.btn.backspac
+	    break 

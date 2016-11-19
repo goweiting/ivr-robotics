@@ -21,35 +21,49 @@ logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
                     level=logging.DEBUG)
 
-
 # -----------------
 # START
 # -----------------
+
 ev3.Sound.speak('hello').wait()
 # Declare the sensors and motors for connection
 L = io.motA
 R = io.motB
 col = io.col
+WHITE = None
+MIDPOINT = None
 
-ev3.Sound.speak('Calibrating, put on desired').wait()
-MIDPOINT = col.value()
-ev3.Sound.speak('Done').wait()
+ev3.Sound.speak('Calibrating, WHITE').wait()
+while True:
+    if io.btn.backspace:
+        WHITE = col.value()
+        ev3.Sound.speak('Done').wait()
+        logging.info('WHITE= {}'.format(WHITE))
+        break
+
+ev3.Sound.speak('Calibrating, MIDPOINT').wait()
+while True:
+    if io.btn.backspace:
+        MIDPOINT = col.value()
+        ev3.Sound.speak('Done').wait()
+        logging.info('MIDPOINT = {}'.format(MIDPOINT))
+        break
 
 # MOTOR:
 L.connected
 R.connected
 L.reset()  # reset the settings
 R.reset()
-L.duty_cycle_sp = 30
-R.duty_cycle_sp = 30
+L.duty_cycle_sp = 20
+R.duty_cycle_sp = 20
 
 # SENSORS
 col.connected
 col.mode = 'COL-REFLECT'
 
-kp =  2
-ki = .1
-kd = .9
+kp = 1
+ki = 0
+kd = 0
 history = 5
 
 control = Controller(kp, ki, kd, MIDPOINT, history)
@@ -60,11 +74,11 @@ err_vals = 'kp = {}, ki = {}, kd = {} r = {}\n'.format(
     kp, ki, kd, control.desired)
 f = open('./vals.txt', 'w')
 
-v = 50  # constant speed
-while not io.btn.backspace:  # run for 10 seconds
+v = 30 # constant speed
+while col.value() < WHITE:  # run for 10 seconds
     signal, err = control.control_signal(col.value())
-    L.run_timed(time_sp=1000, speed_sp=v - signal)
-    R.run_timed(time_sp=1000, speed_sp=v + signal)
+    L.run_timed(time_sp=100, speed_sp=v-signal)
+    R.run_timed(time_sp=100, speed_sp=v+signal)
 
     logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
         col.value(), signal, err, L.speed_sp, R.speed_sp))

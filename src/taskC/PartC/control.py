@@ -63,3 +63,4 @@ class controller(object):
         self.maintain_hist()
 
         return signal, err  # return the error for computation
+

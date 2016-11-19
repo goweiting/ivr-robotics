@@ -11,3 +11,4 @@ gyro = ev3.GyroSensor(ev3.INPUT_1)
 motA = ev3.LargeMotor(ev3.OUTPUT_A)  # left motor
 motB = ev3.LargeMotor(ev3.OUTPUT_C)  # right motor
 # servo = ev3.MediumMotor(ev3.OUTPUT_B)
+

@@ -291,6 +291,16 @@ def fix_position(kp, ki, kd, hist, fix_angle, side):
                 R.polarity='normal'
                 L.polarity='normal'
 
+<<<<<<< HEAD
+=======
+while not io.btn.backspace:
+    follow_line(.01,0,0,10,midpoint,1) # on left line, follows right side
+    rotate(.01,0,0,10,turn,1) # rotate to right
+    find_line(.01,0,0,10)
+    follow_line(.01,0,0,10,midpoint,0)
+    rotate(.01,0,0,10,turn,0) # rotate to left
+    find_line(.01,0,0,10)
+>>>>>>> 10ad5d0af7fdacdf985391f503744d481af4f018
 
 
 follow_line(.1,0,0,10,midpoint,1) # follow right side of line

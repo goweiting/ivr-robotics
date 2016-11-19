@@ -3,7 +3,7 @@ from collections import deque
 # Define a controller class that remembers the values and error
 
 
-class controller(object):
+class Controller(object):
     """
     Variables are based on http://ctms.engin.umich.edu/CTMS/index.php?example=Introduction&section=ControlPID#1
     A controller keep tracks of a limited history of the error values. Errors are calculated with respect to the desired value (r)

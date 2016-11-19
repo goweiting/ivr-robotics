@@ -175,7 +175,7 @@ def follow_until_dist(v, desired_col, desired_distance):
                 us.value())).wait()  # inform user
             logging.info('STOP!')
             final_position = (L.position+R.position)/2
-            diff_position = (final_position - initial_position)*2
+            diff_position = final_position - initial_position
             ev3.Sound.speak('Tacho count travelled is {}'.format(diff_position)).wait()
             logging.info(diff_position)
             L.duty_cycle_sp = v

@@ -74,8 +74,8 @@ control = Controller(kp, ki, kd, MIDPOINT, history)
 v = 30 # constant speed
 while col.value() < WHITE:  # run for 10 seconds
     signal, err = control.control_signal(col.value())
-    L.run_timed(time_sp=50, duty_cycle_sp=v+signal) # going CW
-    R.run_timed(time_sp=50, duty_cycle_sp=v-signal)
+    L.run_timed(time_sp=50, duty_cycle_sp=v-signal) # going CCW
+    R.run_timed(time_sp=50, duty_cycle_sp=v+signal)
 
     print('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
         col.value(), signal, err, L.speed_sp, R.speed_sp))

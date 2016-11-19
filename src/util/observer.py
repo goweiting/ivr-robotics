@@ -6,10 +6,11 @@ import logging
 
 class Listener(object):
     """
-    Registered :class Listener to :class Subjects will be notified when the
-    subject have reached their desired value
-
-    In this case, it is almost always that the :class listener will cause an effect of the motor
+    The :class Listener have a desired_statae that it is looking out for.
+    There are two :param mode - 'LT' - Less than and 'GT' - Greater than.
+    If the subject it is subscribed to updates the listener with a value that
+    is LT or GT than its goal state, then the Listener is set to True - hence
+    activated
     """
     def __init__(self, name, subject, desired_state, mode):
         self._string = name
@@ -37,6 +38,9 @@ class Listener(object):
 
     def get_state(self):
         return self.state
+
+    def reset(self):
+        self.state = False
 
     def __str__(self):
         return self._string

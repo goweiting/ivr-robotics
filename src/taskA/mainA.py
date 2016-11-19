@@ -18,7 +18,7 @@ import ev3dev.ev3 as ev3
 import util.io as io
 from util.control import Controller
 
-logging.basicConfig(format='%(levelname)s: %(asctime)s %(message)s',
+logging.basicConfig(format='%(levelname)s: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
                     level=logging.DEBUG)
 
@@ -77,8 +77,8 @@ f = open('./vals.txt', 'w')
 v = 30 # constant speed
 while col.value() < WHITE:  # run for 10 seconds
     signal, err = control.control_signal(col.value())
-    L.run_timed(time_sp=50, duty_cycle_sp=v-signal) # going CCW
-    R.run_timed(time_sp=50, duty_cycle_sp=v+signal)
+    L.run_timed(time_sp=50, duty_cycle_sp=v+signal) # going CW
+    R.run_timed(time_sp=50, duty_cycle_sp=v-signal)
 
     print('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
         col.value(), signal, err, L.speed_sp, R.speed_sp))

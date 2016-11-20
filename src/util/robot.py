@@ -55,30 +55,32 @@ class Robot(object):
         """
 
         global L, R
-
-        try:
-            f = open(filename, 'w')  # if filename is not defined
-        except IOError:
-            filename = "t{}d{}s{}.txt".format(time_sp, duty_cycle_sp, speed_sp)
-            f = open(filename, 'w')
-
+        L.reset() # reset the count first
+        R.reset()
         op = "time_sp = {} duty_cycle_sp = {}, speed_sp = {}\n".format(
-            time_sp, duty, duty_cycle_sp, speed_sp)
+            time_sp, duty_cycle_sp, speed_sp)
         ev3.Sound.speak('Running at duty {} for time {}'.format(
             time_sp, duty_cycle_sp)).wait()
 
         # divie the time_sp into 10 cycles:
         for i in range(1, 10):
-            pos = str((L.position + R.position)) / 2  # find the average
+            pos = str((L.position + R.position) / 2)  # find the average
             op += pos + "\n"
             L.run_timed(time_sp=time_sp / 10,
                         duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
             R.run_timed(time_sp=time_sp / 10,
                         duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
 
+        distance = input('Distance travelled in (cm):')
+
+        try:
+            f = open(filename, 'w')  # if filename is not defined
+        except IOError:
+            filename = "t{}d{}s{}dist{}.txt".format(time_sp, duty_cycle_sp, speed_sp, distance)
+            f = open(filename, 'w')
         f.write(op)
         f.close()
-        
+
     def pythagoras(self, x, y):
         """
         Calculate the distance to be travelled

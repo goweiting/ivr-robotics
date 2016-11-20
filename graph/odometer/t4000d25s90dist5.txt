@@ -1,0 +1,10 @@
+time_sp = 4000 duty_cycle_sp = 25, speed_sp = 90
+0
+0
+1
+2
+5
+7
+10
+12
+16

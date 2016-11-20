@@ -33,6 +33,7 @@ class Robot(object):
         # 1) Rotate robot:
         
 
+
         # 2) calculate required_distance
         required_distance = pythagoras(dx,dy)
 

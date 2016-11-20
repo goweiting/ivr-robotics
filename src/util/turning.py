@@ -41,6 +41,7 @@ def turn_on_spot(v, angle, motor):
         turn_control = Controller(.8 , 0.01, 0.01,
                                   desired_angle,
                                   history=10)
+        servo.duty_cycle_sp = servo.duty_cycle_sp * direction
         if servo.duty_cycle_sp < 0 : servo.duty_cycle_sp = -1 * servo.duty_cycle_sp
         while True:
             # servo.run_timed(time_sp=100, duty_cycle_sp=v + signal)  # changed from speed_sp
@@ -51,6 +52,7 @@ def turn_on_spot(v, angle, motor):
             if abs(err) <= 4 or io.btn.backspace:  # tolerance
                 servo.stop()
                 servo.speed_sp = v
+                servo.duty_cycle_sp = servo.duty_cycle_sp * direction # return to the original number
                 return
     else:
         raise NameError('motor should be "ROBOT" or "SERVO"')

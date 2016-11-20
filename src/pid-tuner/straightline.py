@@ -7,7 +7,7 @@ import logging
 import time
 import os
 import ev3dev.ev3 as ev3
-import util.time_ms as timer
+from util.time_ms import timestamp_now
 import util.io as io
 from util.control import Controller
 
@@ -27,18 +27,10 @@ col = io.col
 gyro = io.gyro
 
 
-# Setting black and white
-# ev3.Sound.speak('White').wait()
-# time.sleep(2) # wait for 3 seconds
-# WHITE = col.value()
-# logging.info('WHITE = {}'.format(WHITE))
-#
-# ev3.Sound.speak('BLACK').wait()
-# BLACK = col.value()
-# logging.info('BLACK = {}'.format(BLACK))
-#
-#
-# MIDPOINT = (WHITE-BLACK)/2 + BLACK
+# --------------------------
+# Some variables
+MIDPOINT = XX
+# --------------------------
 
 
 def run_experiment(duty, kp, ki, kd, history, filename):
@@ -63,22 +55,20 @@ def run_experiment(duty, kp, ki, kd, history, filename):
     # SENSORS
     col.connected
     col.mode = 'COL-REFLECT'
-    gyro.connected
-    gyro.mode = 'GYRO-CAL'
-    gyro.mode = 'GYRO-ANG'  # calibrate the sensor
 
-    r = col.value() # the midpoint that the color sensor should maintain
-    control = controller(kp, ki, kd, r, history) # use the color controller to guide the amount of duty given to each motor
+    r = col.value()  # the midpoint that the color sensor should maintain
+    # use the color controller to guide the amount of duty given to each motor
+    control = controller(kp, ki, kd, r, history)
     # ----------------
     # Set up writing file
     # ----------------
     err_vals = 'kp = {}, ki = {}, kd = {}\n'.format(
-        kp, ki, kd, control.desired)
+        kp, ki, kd)
     f = open(filename, 'w')
 
     v = duty  # constant speed
-    t_start = util.timestamp_now()
-    t_now = util.timestamp_now()
+    t_start = timestamp_now()
+    t_now = timestamp_now()
 
     while (t_now - t_start < 20E3):  # run for 10 seconds
         signal, err = control.control_signal(col.value())

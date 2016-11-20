@@ -5,6 +5,11 @@ import ev3dev.ev3 as ev3
 import io
 from control import Controller
 
+L = io.motA
+R = io.motB
+gyro = io.gyro
+
+
 class Robot(object):
     """
     A robot class to keep tracks of the current state of the robot
@@ -20,7 +25,7 @@ class Robot(object):
         self.odo = dict()
         self.position = (self.x, self.y, self.yaw)
 
-    def goto(self, dx,dy,dyaw):
+    def goto(self, dx, dy, dyaw):
         """
         OPEN LOOP CONTROL
         Given a goal - [dx, dy, dyaw]
@@ -29,28 +34,52 @@ class Robot(object):
         3)  use the robot's odometer model to drive the robot forward - blind forward
         4)  adjust the yaw to be dyaw (correction)
         """
+        global L, R, gyro
 
         # 1) Rotate robot:
-        
-
 
         # 2) calculate required_distance
-        required_distance = pythagoras(dx,dy)
+        required_distance = pythagoras(dx, dy)
 
         # 3) move forward
 
         # 4) check state
 
-
-
-
-    def odometer_cal(self):
+    def odometer_cal(self, time_sp, duty_cycle_sp, speed_sp, filename=""):
         """
-        Calibrate the robot odometer
+        get some readings for the odometer by using the amount of distance
+        :time_sp
+        :duty_cycle_sp
+        :speed_sp
+        :param      - filename write the tacho counts it takes if given
         """
 
+        global L, R
 
-    def pythagoras(self,x,y):
+        try:
+            f = open(filename, 'w')  # if filename is not defined
+        except IOError:
+            filename = "t{}d{}s{}.txt".format(time_sp, duty_cycle_sp, speed_sp)
+            f = open(filename, 'w')
+
+        op = "time_sp = {} duty_cycle_sp = {}, speed_sp = {}\n".format(
+            time_sp, duty, duty_cycle_sp, speed_sp)
+        ev3.Sound.speak('Running at duty {} for time {}'.format(
+            time_sp, duty_cycle_sp)).wait()
+
+        # divie the time_sp into 10 cycles:
+        for i in range(1, 10):
+            pos = str((L.position + R.position)) / 2  # find the average
+            op += pos + "\n"
+            L.run_timed(time_sp=time_sp / 10,
+                        duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
+            R.run_timed(time_sp=time_sp / 10,
+                        duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
+
+        f.write(op)
+        f.close()
+        
+    def pythagoras(self, x, y):
         """
         Calculate the distance to be travelled
         """

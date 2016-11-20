@@ -1,11 +1,11 @@
-# --------------------------------------------------------------
-# Define useful functions for taskC
-#   - :func: follow_line()
-# --------------------------------------------------------------
+"""
+Functions used for taskC
+"""
 
 # imports
 import logging
 import time
+import math
 
 import ev3dev.ev3 as ev3
 import util.io as io
@@ -19,120 +19,6 @@ servo = io.servo
 us = io.us
 gyro = io.gyro
 col = io.col
-
-def turn_CW(v, angle, motor):
-    """
-    turn the robot/servo motor on the spot by the desired_angle by referencing using the gyro value/servo position
-    :param v - the duty_cycle_sp or speed_sp
-    :param angle - the amount in degrees that you want the :param to turn
-    :param motor - `ROBOT`, `SERVO`, where ROBOT will cause the ROBOT to turn on the spot by :param angle; likewise for the servo motor
-    """
-
-    global L, R, servo, gyro
-
-    gyro.mode = 'GYRO-ANG'
-    ev3.Sound.speak(
-        'Turning {} clock wise {} degrees'.format(motor, angle)).wait()
-    logging.info('Turning {} clock wise {} degrees'.format(motor, angle))
-
-    if motor == 'ROBOT':
-        angle = gyro.value() + abs(angle)
-        turn_control = Controller(.2, 0, 0.5,
-                                  angle,
-                                  history=10)
-
-        # L will move forward, R will move backwards
-        if L.duty_cycle_sp < 0 : L.duty_cycle_sp = -1 * L.duty_cycle_sp
-        if R.duty_cycle_sp > 0 : R.duty_cycle_sp = -1 * R.duty_cycle_sp
-        while True:
-            signal, err = turn_control.control_signal(gyro.value())
-            R.run_timed(time_sp=100, speed_sp=v+signal)
-            L.run_timed(time_sp=100, speed_sp=v-signal)
-            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-                gyro.value(), signal, err, L.speed_sp, R.speed_sp))
-
-            if abs(err) <= 4 or io.btn.backspace:  # tolerance
-                L.stop()
-                R.stop()
-                R.speed_sp = v
-                L.speed_sp = v
-                R.duty_cycle_sp = -1 *  R.duty_cycle_sp
-                return
-
-    elif motor == 'SERVO':
-        angle = servo.position + abs(angle)
-        turn_control = Controller(.8 , 0.01, 0.01,
-                                  angle,
-                                  history=10)
-        # check that the servo is moving in positive direction
-        if servo.duty_cycle_sp < 0 : servo.duty_cycle_sp = -1 * servo.duty_cycle_sp
-        while True:
-            # servo.run_timed(time_sp=100, duty_cycle_sp=v + signal)  # changed from speed_sp
-            signal, err = turn_control.control_signal(servo.position)
-            servo.run_timed(time_sp=100, speed_sp=v + abs(signal))
-            logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
-                servo.position, signal, err, servo.speed_sp))
-            if abs(err) <= 4 or io.btn.backspace:  # tolerance
-                servo.stop()
-                servo.speed_sp = v
-                return
-
-
-def turn_CCW(v, angle, motor):
-    """
-    turn the robot/servo motor on the spot by the desired_angle by referencing using the gyro value/servo position
-    :param v - the duty_cycle_sp or speed_sp
-    :param angle - the amount in degrees that you want the :param to turn
-    :param motor - `ROBOT`, `SERVO`, where ROBOT will cause the ROBOT to turn on the spot by :param angle; likewise for the servo motor
-    """
-
-    global L, R, gyro, servo
-
-    gyro.mode = 'GYRO-ANG'
-    ev3.Sound.speak(
-        'Turning {} counter clock wise {} degrees'.format(motor, angle)).wait()
-    logging.info(
-        'Turning {} counter clock wise {} degrees'.format(motor, angle))
-
-    if motor == 'ROBOT':
-        angle = gyro.value() - abs(angle)
-        turn_control = Controller(.2, 0, 0.5,
-                                  angle,
-                                  history=10)
-        # R will move forward, L will move backwards
-        if R.duty_cycle_sp<0: R.duty_cycle_sp = -1 * R.duty_cycle_sp
-        if L.duty_cycle_sp>0: L.duty_cycle_sp = -1 * L.duty_cycle_sp
-        while True:
-            signal, err = turn_control.control_signal(gyro.value())
-            R.run_timed(time_sp=100, speed_sp=v-signal)
-            L.run_timed(time_sp=100, speed_sp=v+signal)
-            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-                gyro.value(), signal, err, L.speed_sp, R.speed_sp))
-            if abs(err) <= 4 or io.btn.backspace:  # tolerance
-                R.stop()
-                L.stop()
-                L.speed_sp = v # reset the speed
-                R.speed_sp = v
-                L.duty_cycle_sp = -1 * L.duty_cycle_sp
-                return
-
-    elif motor == 'SERVO':
-        angle = servo.position - abs(angle) # desired angle
-        turn_control = Controller(.8, 0.01, 0.01,
-                                  angle,
-                                  history=10)
-        if servo.duty_cycle_sp > 0: servo.duty_cycle_sp = -1 * servo.duty_cycle_sp
-        while True:
-            signal, err = turn_control.control_signal(servo.position)
-            servo.run_timed(time_sp=100, speed_sp=v + abs(signal))
-            logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
-                servo.position, signal, err, servo.speed_sp))
-            if abs(err) <= 4 or io.btn.backspace:  # tolerance
-                servo.stop()
-                # reset the settings
-                servo.speed_sp=v
-                servo.duty_cycle_sp = -1 * servo.duty_cycle_sp
-                return
 
 
 def follow_until_dist(v, desired_col, desired_distance):
@@ -153,9 +39,7 @@ def follow_until_dist(v, desired_col, desired_distance):
                               desired_col,
                               history=10)  # a P controller
     distance_subject = Subject('distance_subject')
-    distance_to_record = desired_distance*1.5 #TODO:try 1.5???
-    #record_ = Listener('record_', distance_subject,
-#                       desired_distance*2, 'LT') # to start recording how many taco counts for the range
+    distance_to_record = int(desired_distance*1.5) #TODO:try 1.5???
     halt_ = Listener('halt_', distance_subject,
                      desired_distance, 'LT')  # halt when LT desired_distance
 
@@ -165,8 +49,10 @@ def follow_until_dist(v, desired_col, desired_distance):
     while not diff_position:
 
         distance_subject.set_val(us.value())  # update the subject
-        if not initial_position and us.value() in range(distance_to_record-5,distance_to_record+5):
-            # ev3.Sound.speak('I will note this position {}'.format(L.position)).wait()
+
+        # TODO: Will be replaced using odometer
+        if not initial_position and math.ceil(us.value()) in range(distance_to_record-5, distance_to_record+5):
+            ev3.Sound.speak('I will note this position {}'.format(L.position)).wait()
             initial_position = (L.position+R.position)/2
             logging.info('I will note this position {}'.format(initial_position))
 
@@ -175,7 +61,7 @@ def follow_until_dist(v, desired_col, desired_distance):
                 us.value())).wait()  # inform user
             logging.info('STOP!')
             final_position = (L.position+R.position)/2
-            diff_position = final_position - initial_position
+            diff_position = (final_position - initial_position)*2 # x2 because of 1.5
             ev3.Sound.speak('Tacho count travelled is {}'.format(diff_position)).wait()
             logging.info(diff_position)
             L.duty_cycle_sp = v
@@ -208,7 +94,7 @@ def forward_until_line(v, line_col, desired_heading):
         'Moving forward until line is found. Col is {}'.format(line_col)).wait()
 
     # TODO: need to tune this!
-    line_control = Controller(.5, 0, 0,
+    gyro_control = Controller(.5, 0, 0,
                               desired_heading,
                               history=10)  # a P controller
     col_subject = Subject('col_subject')
@@ -226,7 +112,7 @@ def forward_until_line(v, line_col, desired_heading):
             return
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
-            signal, err = line_control.control_signal(gyro.value())
+            signal, err = gyro_control.control_signal(gyro.value())
             if err < 0:
                 L.run_timed(time_sp=100, duty_cycle_sp=v - signal)
                 R.run_timed(time_sp=100, duty_cycle_sp=v + signal)
@@ -336,7 +222,8 @@ def blind_forward(v,tacho_counts, expected_heading):
         L.run_timed(time_sp=100, speed_sp=v + abs(signal))
         R.run_timed(time_sp=100, speed_sp=v + abs(signal))
         logging.info('position = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-            L.position, signal, err, L.speed_sp, R.speed_sp))
+            (L.position+R.position)/2, signal, err, L.speed_sp, R.speed_sp))
+
         if abs(err) <= 4 or io.btn.backspace:
             L.stop()
             R.stop()

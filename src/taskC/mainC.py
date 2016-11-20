@@ -17,7 +17,7 @@ import logging
 import ev3dev.ev3 as ev3
 import util.io as io
 import helper
-from util.controller import Controller
+from util.control import Controller
 from util.observer import Listener, Subject
 
 logging.basicConfig(format='%(levelname)s: %(message)s',
@@ -78,8 +78,6 @@ logging.info('-------------------RUNNING-------------------')
 logging.info('follow the line until object at desired_distance found')
 # -----------------------------------------------------
 
-while not io.btn.Enter: # use Enter as a circuit breaker
-    main()
 
 def main():
     """
@@ -90,7 +88,7 @@ def main():
     global MIDPOINT, gyro, col, L, R
 
     # FINDING OBJECT
-    diff_position = helper.follow_until_dist(v=20,
+    diff_position = helper.follow_until_dist(v=30,
                        desired_col=MIDPOINT,
                        desired_distance=100)
 
@@ -105,18 +103,19 @@ def main():
 
     if gyro.value() != robot_forward_heading: # TODO
         ev3.Sound.speak('Calibration Error')
-        break
+        return False
 
     logging.info('reference heading = {}'.format(robot_forward_heading))
     logging.info('turning 90degrees cw')
-    helper.turn_CW(v=40,
+    helper.turn_CW(v=50,
                     angle=robot_right-gyro.value(),
                     motor='ROBOT')
     # time.sleep(2)
 
     logging.info('turn servo 90 degrees')
-    helper.turn_CCW(v=30,
-                    angle=90,
+    helper.turn_CCW(v=40,
+                    angle=90, # should use find object instead because not reproducible
+
                     motor='SERVO')
     time.sleep(2)
 
@@ -125,7 +124,7 @@ def main():
     logging.info('MOVING SIDEWAY')
     thresh = 50
     logging.info('Moving robot until threshold = {} is exceeded'.format(
-                    threshold)) # once us detects surrounding more than 1.5cm away, halt
+                    thresh)) # once us detects surrounding more than 1.5cm away, halt
     helper.move_in_range(v=30,
                         desired_angle=robot_right,
                         threshold=thresh)
@@ -139,7 +138,7 @@ def main():
     # time.sleep(2)
 
     logging.info('Turning ROBOT CCW')
-    helper.turn_CCW(v=40,
+    helper.turn_CCW(v=50,
                     angle=(gyro.value()-robot_forward_heading),
                     motor='ROBOT')
     # time.sleep(2)
@@ -156,13 +155,13 @@ def main():
     logging.info('Moving forward until edge is found')
     helper.move_in_range(v=30,
                         desired_angle=robot_forward_heading,
-                        thresh)
+                        threshold = thresh)
     # time.sleep(2)
 
     logging.info('Moving the robot tacho count = {} for object to be in range'.format(
-                        diff_position+100))
+                        diff_position))
     helper.blind_forward(v=30,
-                        tacho_counts=diff_position+100, # compensate the length of the robot
+                        tacho_counts=diff_position,
                         expected_heading= robot_forward_heading)
     # time.sleep(2)
 
@@ -170,7 +169,7 @@ def main():
     # -----<<<<---------------------------------------------
     # HEADING SIDEWAY
     logging.info('turning the ROBOT CCW by {}'.format(robot_forward_heading-90))
-    helper.turn_CCW(v=40,
+    helper.turn_CCW(v=50,
                     angle=(robot_left-gyro.value()),
                     motor='ROBOT')
     # time.sleep(2)
@@ -189,13 +188,16 @@ def main():
     # time.sleep(2)
 
     logging.info('Turning the robot CW by {}'.format(robot_forward_heading-gyro.value()))
-    helper.turn_CW(v=40,
+    helper.turn_CW(v=50,
                     angle=robot_forward_heading-gyro.value(),
                     motor='ROBOT')
     # time.sleep(2)
 
     if col.value() > MIDPOINT: # cant find the left edge yet, so turn
-        control = Controller(kp=.6, ki=.01, kd=.2, MIDPOINT, history)
+        control = Controller(kp=.6, ki=.01, kd=.2,
+                            r=MIDPOINT,
+                            history=10)
+        v=30 # same as mainA
         while col.value() > MIDPOINT: # keep turning turn
             signal, err = control.control_signal(col.value())
             L.run_timed(time_sp=50, duty_cycle_sp=v+signal) # going CW
@@ -204,3 +206,7 @@ def main():
         return # reached midpoint
     else:
         return
+
+
+while not io.btn.enter: # use Enter as a circuit breaker
+    main()

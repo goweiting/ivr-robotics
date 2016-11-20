@@ -6,6 +6,7 @@
 # imports
 import logging
 import time
+import math
 
 import ev3dev.ev3 as ev3
 import util.io as io
@@ -37,7 +38,7 @@ def turn_CW(v, angle, motor):
 
     if motor == 'ROBOT':
         angle = gyro.value() + abs(angle)
-        turn_control = Controller(.2, 0, 0.5,
+        turn_control = Controller(.5, 0, 0.5,
                                   angle,
                                   history=10)
 
@@ -96,7 +97,7 @@ def turn_CCW(v, angle, motor):
 
     if motor == 'ROBOT':
         angle = gyro.value() - abs(angle)
-        turn_control = Controller(.2, 0, 0.5,
+        turn_control = Controller(.5, 0, 0.5,
                                   angle,
                                   history=10)
         # R will move forward, L will move backwards
@@ -153,9 +154,7 @@ def follow_until_dist(v, desired_col, desired_distance):
                               desired_col,
                               history=10)  # a P controller
     distance_subject = Subject('distance_subject')
-    distance_to_record = desired_distance*1.5 #TODO:try 1.5???
-    #record_ = Listener('record_', distance_subject,
-#                       desired_distance*2, 'LT') # to start recording how many taco counts for the range
+    distance_to_record = int(desired_distance*1.5) #TODO:try 1.5???
     halt_ = Listener('halt_', distance_subject,
                      desired_distance, 'LT')  # halt when LT desired_distance
 
@@ -165,8 +164,9 @@ def follow_until_dist(v, desired_col, desired_distance):
     while not diff_position:
 
         distance_subject.set_val(us.value())  # update the subject
-        if not initial_position and us.value() in range(distance_to_record-5,distance_to_record+5):
-            # ev3.Sound.speak('I will note this position {}'.format(L.position)).wait()
+
+        if not initial_position and math.ceil(us.value()) in range(distance_to_record-5, distance_to_record+5):
+            ev3.Sound.speak('I will note this position {}'.format(L.position)).wait()
             initial_position = (L.position+R.position)/2
             logging.info('I will note this position {}'.format(initial_position))
 
@@ -175,7 +175,7 @@ def follow_until_dist(v, desired_col, desired_distance):
                 us.value())).wait()  # inform user
             logging.info('STOP!')
             final_position = (L.position+R.position)/2
-            diff_position = final_position - initial_position
+            diff_position = (final_position - initial_position)*2 # x2 because of 1.5
             ev3.Sound.speak('Tacho count travelled is {}'.format(diff_position)).wait()
             logging.info(diff_position)
             L.duty_cycle_sp = v
@@ -336,7 +336,8 @@ def blind_forward(v,tacho_counts, expected_heading):
         L.run_timed(time_sp=100, speed_sp=v + abs(signal))
         R.run_timed(time_sp=100, speed_sp=v + abs(signal))
         logging.info('position = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-            L.position, signal, err, L.speed_sp, R.speed_sp))
+            (L.position+R.position)/2, signal, err, L.speed_sp, R.speed_sp))
+
         if abs(err) <= 4 or io.btn.backspace:
             L.stop()
             R.stop()

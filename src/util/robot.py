@@ -59,8 +59,8 @@ class Robot(object):
         R.reset()
         op = "time_sp = {} duty_cycle_sp = {}, speed_sp = {}\n".format(
             time_sp, duty_cycle_sp, speed_sp)
-        ev3.Sound.speak('Running at duty {} for time {}'.format(
-            time_sp, duty_cycle_sp)).wait()
+        ev3.Sound.speak('Running at duty {} speed {} for time {}'.format(
+            time_sp, speed_sp, duty_cycle_sp)).wait()
 
         # divie the time_sp into 10 cycles:
         for i in range(1, 10):
@@ -72,12 +72,14 @@ class Robot(object):
                         duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
 
         distance = input('Distance travelled in (cm):')
+        op += "dist = " + str(distance) + '\n'
 
+        # write to file
         try:
-            f = open(filename, 'w')  # if filename is not defined
+            f = open(filename, 'a')  # if filename is not defined
         except IOError:
-            filename = "t{}d{}s{}dist{}.txt".format(time_sp, duty_cycle_sp, speed_sp, distance)
-            f = open(filename, 'w')
+            filename = "t{}d{}s{}.txt".format(time_sp, duty_cycle_sp, speed_sp)
+            f = open(filename, 'a')
         f.write(op)
         f.close()
 

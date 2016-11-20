@@ -45,43 +45,6 @@ class Robot(object):
 
         # 4) check state
 
-    def odometer_cal(self, time_sp, duty_cycle_sp, speed_sp, filename=""):
-        """
-        get some readings for the odometer by using the amount of distance
-        :time_sp
-        :duty_cycle_sp
-        :speed_sp
-        :param      - filename write the tacho counts it takes if given
-        """
-
-        global L, R
-        L.reset() # reset the count first
-        R.reset()
-        op = "time_sp = {} duty_cycle_sp = {}, speed_sp = {}\n".format(
-            time_sp, duty_cycle_sp, speed_sp)
-        ev3.Sound.speak('Running at duty {} speed {} for time {}'.format(
-            time_sp, speed_sp, duty_cycle_sp)).wait()
-
-        # divie the time_sp into 10 cycles:
-        for i in range(1, 10):
-            pos = str((L.position + R.position) / 2)  # find the average
-            op += pos + "\n"
-            L.run_timed(time_sp=time_sp / 10,
-                        duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
-            R.run_timed(time_sp=time_sp / 10,
-                        duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
-
-        distance = input('Distance travelled in (cm):')
-        op += "dist = " + str(distance) + '\n'
-
-        # write to file
-        try:
-            f = open(filename, 'a')  # if filename is not defined
-        except IOError:
-            filename = "t{}d{}s{}.txt".format(time_sp, duty_cycle_sp, speed_sp)
-            f = open(filename, 'a')
-        f.write(op)
-        f.close()
 
     def pythagoras(self, x, y):
         """

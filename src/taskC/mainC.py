@@ -183,8 +183,8 @@ def main():
     # ------------------------------------------------------
     logging.info('Moving forward before turning')
     helper.blind_forward(v=30,
-                        tacho_counts=100, # TODO: move 100 tacho count?
-                        expected_heading= robot_left)
+                        tacho_counts = 100, # TODO: move 100 tacho count?
+                        expected_heading = robot_left)
     # time.sleep(2)
 
     logging.info('Turning the robot CW by {}'.format(robot_forward_heading-gyro.value()))

@@ -72,6 +72,8 @@ L.reset()  # reset the settings
 R.reset()
 L.duty_cycle_sp = 30
 R.duty_cycle_sp = 30
+L.speed_sp = 20
+R.speed_sp = 20
 servo.connected
 servo.reset()
 servo.duty_cycle_sp = 40
@@ -188,14 +190,14 @@ def main():
     # ------------------------------------------------------
     logging.info('Moving forward before turning')
     helper.blind_forward(v=30,
-                        tacho_counts = tacho_counts_to_travel+100,
+                        tacho_counts = tacho_counts_to_travel*2,
                         expected_heading = robot_left)
     time.sleep(2)
 
     logging.info('Turning the robot CW by  \
-        {}'.format(robot_forward_heading-gyro.value()))
+        {}'.format(robot_right-gyro.value()))
     turn_on_spot(v=30,
-                    angle=robot_forward_heading-gyro.value(),
+                    angle=robot_right-gyro.value(),
                     motor='ROBOT')
     time.sleep(2)
 

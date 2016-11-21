@@ -98,10 +98,10 @@ def forward_until_line(v, line_col, desired_heading):
         col_subject.set_val(col.value())  # update color
 
         if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
-            ev3.Sound.speak('Line detcted. hurray!').wait()
-            logging.info('STOP!')
             L.stop()
             R.stop()
+            ev3.Sound.speak('Line detcted. hurray!').wait()
+            logging.info('STOP!')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             return

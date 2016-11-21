@@ -5,6 +5,7 @@ A collection of functions to turn the ROBOT or SERVO
 import logging
 
 import io
+import ev3dev.ev3 as ev3
 from control import Controller
 
 def turn_on_spot(v, angle, motor):
@@ -25,6 +26,8 @@ def turn_on_spot(v, angle, motor):
     # -------------- ROBOT ---------------------
     if motor == 'ROBOT':
         desired_angle = gyro.value() + angle
+        ev3.Sound.speak('Turning robot {} degrees'.format(desired_angle)).wait()
+        logging.info('Turning the robot {} degrees'.format(desired_angle))
         turn_control = Controller(.8, 0, 0.5,
                                   desired_angle,
                                   history=10)
@@ -32,10 +35,12 @@ def turn_on_spot(v, angle, motor):
         R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
         while True:
             signal, err = turn_control.control_signal(gyro.value())
+            if (abs(v+signal)>100):
+                signal = 0
             L.run_direct(speed_sp=v-signal)
             R.run_direct(speed_sp=v+signal)
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-                gyro.value(), signal, err, L.speed_sp, R.speed_sp))
+            gyro.value(), signal, err, L.speed_sp, R.speed_sp))
 
             if abs(err) <= 4 or io.btn.backspace:  # tolerance
                 L.stop()
@@ -52,9 +57,13 @@ def turn_on_spot(v, angle, motor):
                                   angle,
                                   history=10)
         servo.duty_cycle_sp = servo.duty_cycle_sp * direction
+        ev3.Sound.speak('Turning servo {} degrees'.format(angle)).wait()
+        logging.info('Turning servo {} degrees'.format(angle))
         while True:
             # servo.run_timed(time_sp=100, duty_cycle_sp=v + signal)  # changed from speed_sp
             signal, err = turn_control.control_signal(servo.position)
+            if (abs(v+signal)>100):
+                signal = 0
             servo.run_direct(speed_sp=v + abs(signal))
             logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
                 servo.position, signal, err, servo.speed_sp))

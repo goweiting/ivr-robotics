@@ -92,7 +92,7 @@ class Subject(object):
         """
 
         self.current_val = val
-        logging.info('{} update = {}'.format(self._string, self.current_val))
+        # logging.info('{} update = {}'.format(self._string, self.current_val))
         self.notify_listener(self.current_val)
 
     def get_val(self):

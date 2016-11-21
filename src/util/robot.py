@@ -22,7 +22,8 @@ class Robot(object):
         self.x = 0
         self.y = 0
         self.yaw = 0
-        self.odo = {10: } # given x duty_cycle_sp, how many tacho counts the robot travel in time_sp = 1000ms
+        self.odo = dict([(10,30/2),(20,93/6),(30,162/11),(40,233/15.5),(50,309/21),(60,379/26),(70,460/32),(80,533/38),(90,602/44)]) # key-duty_speed_cycle  ~value = rate of tacho count/cm
+        self.duty_cycle_sp = 0
         self.position = (self.x, self.y, self.yaw)
 
     def goto(self, dx, dy, dyaw):
@@ -40,10 +41,16 @@ class Robot(object):
 
         # 2) calculate required_distance
         required_distance = pythagoras(dx, dy)
-
+        required_tacho_counts = self.get_tacho_counts()
         # 3) move forward
 
         # 4) check state
+
+    def get_tacho_counts(self, duty_cycle_sp):
+        """
+        Returns the number of tacho counts need to complete given distance
+        """
+        return self.odo.get(duty_cycle_sp)
 
 
     def pythagoras(self, x, y):

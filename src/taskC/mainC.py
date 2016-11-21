@@ -46,7 +46,7 @@ ev3.Sound.speak('hello').wait()
 logging.info('-------------------CALIBRATION-------------------')
 ev3.Sound.speak('Calibrating, WHITE').wait()
 while True:
-    if io.btn.backspace:
+    if io.btn.enter:
         WHITE = col.value()
         ev3.Sound.speak('Done').wait()
         print('WHITE= {}'.format(WHITE))
@@ -54,7 +54,7 @@ while True:
 
 ev3.Sound.speak('Calibrating, MIDPOINT').wait()
 while True:
-    if io.btn.backspace:
+    if io.btn.enter:
         MIDPOINT = col.value()
         ev3.Sound.speak('Done').wait()
         print('MIDPOINT = {}'.format(MIDPOINT))

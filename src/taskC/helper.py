@@ -50,11 +50,12 @@ def follow_until_dist(v, desired_col, desired_distance):
     while True:
         distance_subject.set_val(us.value())  # update the subject
 
-        if halt_.get_state() or io.btn.backspace::  # need to halt since distance have reached
+        if halt_.get_state() or io.btn.backspace: # need to halt since distance have reached
             ev3.Sound.speak('Object detected at range {}'.format(
                 us.value())).wait()  # inform user
             logging.info('STOP!')
-
+            L.stop()
+            R.stop()
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             return
@@ -93,9 +94,11 @@ def forward_until_line(v, line_col, desired_heading):
     while True:
         col_subject.set_val(col.value())  # update color
 
-        if halt_.get_state() or io.btn.backspace::  # need to halt since distance have reached
+        if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
             ev3.Sound.speak('Line detcted. hurray!').wait()
             logging.info('STOP!')
+            L.stop()
+            R.stop()
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             return
@@ -132,7 +135,7 @@ def move_in_range(v, desired_angle, threshold):
     # maintain facing the desired angle
     desired_angle_control = Controller(.5, 0, .1,
                                        desired_angle,
-                                       history=10
+                                       history=10)
 
     # maintain the range wit the object
     range_maintain = Controller(.5,0,0,
@@ -140,8 +143,10 @@ def move_in_range(v, desired_angle, threshold):
                                 history=10)
     while True:
         threshold_subject.set_val(us.value() - initial_range) # update with the difference
-        if halt_.get_state() or io.btn.backspace::
+        if halt_.get_state() or io.btn.backspace:
             # move forward x distance when out of range value is detected
+            L.stop()
+            R.stop()
             L.duty_cycle_sp = v # reset the value
             R.duty_cycle_sp = v
             ev3.Sound.speak('Edge detected').wait()

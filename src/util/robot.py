@@ -22,7 +22,7 @@ class Robot(object):
         self.x = 0
         self.y = 0
         self.yaw = 0
-        self.odo = dict()
+        self.odo = {10: } # given x duty_cycle_sp, how many tacho counts the robot travel in time_sp = 1000ms
         self.position = (self.x, self.y, self.yaw)
 
     def goto(self, dx, dy, dyaw):

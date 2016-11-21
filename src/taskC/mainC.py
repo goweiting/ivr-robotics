@@ -80,7 +80,8 @@ servo_left = servo_org - 90
 servo_right = servo_org + 90
 
 robot = Robot()
-tacho_counts_to_travel = robot.get_tacho_counts(20)*10 # calculates tacho counts for 15 cm with duty_cycle of 40
+# calculates tacho counts for 20 cm with duty_cycle of 20
+tacho_counts_to_travel = robot.get_tacho_counts(20)*20
 
 def main():
     """
@@ -101,6 +102,7 @@ def main():
     helper.follow_until_dist(v=20,
                        desired_col=MIDPOINT,
                        desired_distance=100) #  = 10 cm
+    time.sleep(3)
 
     # HEADING FORWARD
     logging.info('reference heading = \
@@ -124,7 +126,7 @@ def main():
     logging.info('Moving robot until threshold = \
         {} is exceeded'.format(
                     thresh)) # once us detects surrounding more than 1.5cm away, halt
-    helper.move_in_range(v=20,
+    helper.move_in_range(v=25,
                         desired_angle=robot_right,
                         threshold=thresh)
     time.sleep(2)
@@ -138,7 +140,7 @@ def main():
     time.sleep(2)
 
     logging.info('Turning ROBOT CCW')
-    turn_on_spot(v=30, 
+    turn_on_spot(v=30,
                 angle = robot_forward_heading - gyro.value(),
                 motor = 'ROBOT')
     time.sleep(2)
@@ -149,12 +151,12 @@ def main():
         {} for object to be in range'.format(
                     tacho_counts_to_travel))
     helper.blind_forward(v=30,
-                        tacho_counts=tacho_counts_to_travel-50,
+                        tacho_counts=tacho_counts_to_travel,
                         expected_heading = robot_forward_heading)
     time.sleep(2)
 
     logging.info('Moving forward until edge is found')
-    helper.move_in_range(v=20,
+    helper.move_in_range(v=25,
                         desired_angle=robot_forward_heading,
                         threshold = thresh)
     time.sleep(2)
@@ -186,7 +188,7 @@ def main():
     # ------------------------------------------------------
     logging.info('Moving forward before turning')
     helper.blind_forward(v=30,
-                        tacho_counts = tacho_counts_to_travel-100, # TODO: move 100 tacho count?
+                        tacho_counts = tacho_counts_to_travel+100,
                         expected_heading = robot_left)
     time.sleep(2)
 

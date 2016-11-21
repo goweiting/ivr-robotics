@@ -26,8 +26,8 @@ def turn_on_spot(v, angle, motor):
     # -------------- ROBOT ---------------------
     if motor == 'ROBOT':
         desired_angle = gyro.value() + angle
-        ev3.Sound.speak('Turning robot {} degrees'.format(desired_angle)).wait()
-        logging.info('Turning the robot {} degrees'.format(desired_angle))
+        ev3.Sound.speak('Turning robot to desired {} degrees'.format(desired_angle)).wait()
+        logging.info('Turning the robot to desired {} degrees'.format(desired_angle))
         turn_control = Controller(.8, 0, 0.5,
                                   desired_angle,
                                   history=10)

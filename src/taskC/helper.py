@@ -87,7 +87,7 @@ def forward_until_line(v, line_col, desired_heading):
         'Moving forward until line is found. Col is {}'.format(line_col)).wait()
 
     # TODO: need to tune this!
-    gyro_control = Controller(.5, 0, 0.05,
+    gyro_control = Controller(.8, 0, 0.05,
                               desired_heading,
                               history=10)  # a P controller
     col_subject = Subject('col_subject')
@@ -111,11 +111,11 @@ def forward_until_line(v, line_col, desired_heading):
             if (abs(v+signal)>100):
                 signal = 0
             if err > 0:
-                L.run_direct(duty_cycle_sp=v - signal)
-                R.run_direct(duty_cycle_sp=v + signal)
-            elif err < 0:
                 L.run_direct(duty_cycle_sp=v + signal)
                 R.run_direct(duty_cycle_sp=v - signal)
+            elif err < 0:
+                L.run_direct(duty_cycle_sp=v - signal)
+                R.run_direct(duty_cycle_sp=v + signal)
             else:
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
@@ -136,16 +136,19 @@ def move_in_range(v, desired_angle, threshold):
     """
 
     global L, R, us, gyro
-    ev3.Sound.speak(
+    ev3.Sound.speak( \
        'Tracing the object. Stop at threshold of {}'.format(threshold)).wait()
+    logging.info('Tracing the object. Stop at threshold of \
+        {}'.format(threshold))
 
     initial_range = us.value() # get the current range
     threshold_subject = Subject('threshold_subject')
+    # halt if the value is greater than threshold
     halt_ = Listener('halt_', threshold_subject,\
-                     threshold, 'GT') # halt if the value is greater than threshold
+                     threshold, 'GT')
 
     # maintain facing the desired angle
-    desired_angle_control = Controller(.2, 0, 0,
+    desired_angle_control = Controller(.3, 0, 0,
                                        desired_angle,
                                        history=10)
 

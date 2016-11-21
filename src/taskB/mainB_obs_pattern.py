@@ -12,6 +12,8 @@ import helper
 # global vars
 L = io.motA
 R = io.motB
+L.speed_sp=40
+R.speed_sp=40
 gyro = io.gyro
 col = io.col
 
@@ -59,19 +61,17 @@ gyro.mode = 'GYRO-ANG'
 #     print MIDPOINT
 # time.sleep(1)
 
-# ------------------------------
-# Obtain desired angle
-# ------------------------------
-# ev3.Sound.speak('straight').wait() # to maintain the angle
-# ANGLE = gyro.value()
-# while not io.btn.backspace:
-#     ANGLE = gyro.value()
-#     print ANGLE
-# ev3.Sound.speak('ok').wait()
+------------------------------
+Obtain desired angle
+------------------------------
+ev3.Sound.speak('straight').wait() # to maintain the angle
+ANGLE = gyro.value()
+while not io.btn.backspace:
+    ANGLE = gyro.value()
+    print ANGLE
+ev3.Sound.speak('ok').wait()
 
 # set attributes
-ANGLE = gyro.value()
-time.sleep(1)
 MIDPOINT = 10
 WHITE = MIDPOINT + 30 # TODO: adjust this
 RIGHT90 = ANGLE + 90 # TODO: adjust this
@@ -85,28 +85,28 @@ logging.info('-------------------RUNNING-------------------')
 
 # while not io.btn.backspace:
 logging.info('follow left line')
-helper.follow_left_line_till_end(v=20, midpoint=MIDPOINT, desired_col=WHITE)
+helper.follow_left_line_till_end(v=30, midpoint=MIDPOINT, desired_col=WHITE)
 
 # logging.info('rotate to right')
-# helper.rotate(v=20, desired_gyro_val=RIGHT90)
+# helper.rotate(v=30, desired_gyro_val=RIGHT90)
 
 # logging.info('find line on right side')
-# helper.find_line(v=20, desired_col=MIDPOINT)
+# helper.find_line(v=30, desired_col=MIDPOINT)
 #
 # logging.info('fix position on right line')
-# helper.fix_position(v=20, desired_fix_angle=FIXCCW, desired_col=MIDPOINT)
+# helper.fix_position(v=30, desired_fix_angle=FIXCCW, desired_col=MIDPOINT)
 #
 #
 # logging.info('follow right line')
-# helper.follow_right_line_till_end(v=20, midpoint=MIDPOINT, desired_col=WHITE)
+# helper.follow_right_line_till_end(v=30, midpoint=MIDPOINT, desired_col=WHITE)
 #
 # logging.info('rotate to left')
-# helper.rotate(v=20, desired_gyro_val=LEFT90)
+# helper.rotate(v=30, desired_gyro_val=LEFT90)
 #
 # logging.info('find line on left side')
-# helper.find_line(v=20, desired_col=MIDPOINT)
+# helper.find_line(v=30, desired_col=MIDPOINT)
 #
 # logging.info('fix position on left line')
-# helper.fix_position(v=20, desired_fix_angle=FIXCW, desired_col=MIDPIONT)
+# helper.fix_position(v=30, desired_fix_angle=FIXCW, desired_col=MIDPIONT)
 #
 logging.info('--------------------FINISH---------------------')

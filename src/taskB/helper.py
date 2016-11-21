@@ -28,24 +28,30 @@ def follow_left_line_till_end(v, midpoint, desired_col):
 
     ev3.Sound.speak('left line').wait() # follows right side
     # TODO: tune this...
-    motor_col_control = Controller(1, .001, .05,
+    kp = 0
+    kd = 0
+    ki = 0
+    motor_col_control = Controller(kp, kd, ki,
                                     midpoint,
                                     history=10)
-    f = open('./vals.txt','w')
-    err_vals = ""
+
+    filename = ('./tuning/follow_left/{}_{}_{}.txt'.format(kp,kd,ki))
+    f = open(filename,'w') # for plotting
+    err_vals = "" # for plotting
+
     while not io.btn.backspace:
 
         # TODO : give it a tolerance?
         if col.value() >= desired_col: # if equals white then halt
             ev3.Sound.speak('end of line').wait()
             time.sleep(1) # give it some time to rest cos its tired af
-            f.write(err_vals)
-            f.close()
+            f.write(err_vals) # for plotting
+            f.close() # for plotting
             return
 
         else:   # havent reached yet, continue following the line
             signal, err = motor_col_control.control_signal(col.value())
-            err_vals += str(err) + '\n'
+            err_vals += str(err) + '\n' # for plotting
 
             if err > 0:
                 print('too much WHITE   ',col.value())
@@ -72,15 +78,24 @@ def follow_right_line_till_end(v, midpoint, desired_col):
                                     midpoint,
                                     history=10)
 
+    filename = ('./tuning/follow_right/{}_{}_{}.txt'.format(kp,kd,ki))
+    f = open(filename,'w') # for plotting
+    err_vals = "" # for plotting
+
     while not io.btn.backspace:
 
         if col.value() >= desired_col: # if equals white then halt
             ev3.Sound.speak('end of line').wait()
             time.sleep(1) # rest is important
+            f.write(err_vals) # for plotting
+            f.close() # for plotting
+
             return
 
         else:   # havent reached yet, continue following the line
             signal, err = motor_col_control.control_signal(col.value())
+            err_vals += str(err) + '\n' # for plotting
+
             if err > 0:
                 print('too much WHITE   ',col.value())
                 R.run_timed(time_sp=50, duty_cycle_sp=v-abs(signal))
@@ -108,9 +123,13 @@ def rotate(v, desired_gyro_val):
     sensor_gyro_control = Controller(.005, .05, 0.05,
                                     desired_gyro_val,
                                     history=10)
+    filename = ('./tuning/rotate/{}_{}_{}.txt'.format(kp,kd,ki))
+    f = open(filename,'w') # for plotting
+    err_vals = "" # for plotting
 
     while True:
         signal, err = sensor_gyro_control.control_signal(gyro.value())
+        err_vals += str(err) + '\n' # for plotting
 
         if err > 1: # too much clockwise
             R.run_timed(time_sp=50, duty_cycle_sp=v+abs(signal))
@@ -135,6 +154,9 @@ def rotate(v, desired_gyro_val):
         else: # tolerance of 1
             ev3.Sound.speak('I have rotated').wait()
             time.sleep(1) # wait..... maybe more accurate idk
+            f.write(err_vals) # for plotting
+            f.close() # for plotting
+
             return
 
 
@@ -145,11 +167,14 @@ def find_line(v, desired_col):
 
     ev3.Sound.speak('find line').wait()
     # TODO: tune this
+    # use same tuning for follow line??????
     motor_col_control = Controller(.0001, 0, 0,
                                     desired_col,
                                     history=10)
 
     # to maintain a straight line
+    # TODO: tune this
+    # use the same tuning for rotation?????
     desired_angle = gyro.value() # initial angle
     sensor_gyro_control = Controller(.0001, 0, 0,
                                     desired_angle,

@@ -148,7 +148,7 @@ def move_in_range(v, desired_angle, threshold):
                      threshold, 'GT')
 
     # maintain facing the desired angle
-    desired_angle_control = Controller(.3, 0, 0,
+    desired_angle_control = Controller(.7, 0, 0.04,
                                        desired_angle,
                                        history=10)
 
@@ -173,12 +173,12 @@ def move_in_range(v, desired_angle, threshold):
             signal, err = desired_angle_control.control_signal(gyro.value())
             if (abs(v+signal)>100):
                 signal = 0
-            if err > 0:
-                L.run_direct(duty_cycle_sp=v - signal)
-                R.run_direct(duty_cycle_sp=v + signal)
-            elif err < 0:
-                L.run_direct(duty_cycle_sp=v + signal)
-                R.run_direct(duty_cycle_sp=v - signal)
+            if err > 0: # current angle is greater than wanted - need to turn left to get closer
+                L.run_direct(duty_cycle_sp=v - abs(signal))
+                R.run_direct(duty_cycle_sp=v + abs(signal))
+            elif err < 0:# current angle is less than wanted- need to turn right to get closer
+                L.run_direct(duty_cycle_sp=v + abs(signal))
+                R.run_direct(duty_cycle_sp=v - abs(signal))
             else:
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)

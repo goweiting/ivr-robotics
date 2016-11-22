@@ -83,7 +83,7 @@ servo_right = servo_org + 90
 
 robot = Robot()
 # calculates tacho counts for 20 cm with duty_cycle of 20
-tacho_counts_to_travel = robot.get_tacho_counts(20)*20
+tacho_counts_to_travel = robot.get_tacho_counts(30)*25
 
 def main():
     """
@@ -110,13 +110,13 @@ def main():
     logging.info('reference heading = \
         {}'.format(robot_forward_heading))
     logging.info('turning 90 degrees cw')
-    turn_on_spot(v=30,
+    turn_on_spot(v=40, # was 30
                     angle=robot_right-gyro.value(),
                     motor='ROBOT')
     time.sleep(2)
 
     logging.info('turn servo -90 degrees')
-    turn_on_spot(v=45,
+    turn_on_spot(v=45, # was 45
                     angle=servo_left,
                     motor='SERVO')
     time.sleep(2)
@@ -166,8 +166,9 @@ def main():
     logging.info('Moving the robot tacho count = \
         {} for object to be away from the object'.format(
                         tacho_counts_to_travel))
+    tacho_to_cover_robot_body = robot.get_tacho_counts(30)*38
     helper.blind_forward(v=30,
-                        tacho_counts = tacho_counts_to_travel-50,
+                        tacho_counts = tacho_to_cover_robot_body,
                         expected_heading= robot_forward_heading)
     time.sleep(2)
 
@@ -180,46 +181,70 @@ def main():
                     angle=(robot_left-gyro.value()),
                     motor='ROBOT')
     time.sleep(2)
-
-    logging.info('find the line!')
-    helper.forward_until_line(v=30,
-                            line_col = MIDPOINT,
-                            desired_heading = robot_left)
+    # move extra tacho counts
+    logging.info('Moving the robot tacho count = \
+        {} for object to be in range'.format(
+                    tacho_counts_to_travel))
+    helper.blind_forward(v=30,
+                        tacho_counts=tacho_counts_to_travel,
+                        expected_heading = robot_left)
+    time.sleep(2)
+    # until edge is found
+    logging.info('Moving forward until edge is found')
+    helper.move_in_range(v=25,
+                        desired_angle=robot_left,
+                        threshold = thresh)
+    #
+    # logging.info('find the line!')
+    # helper.forward_until_line(v=30,
+    #                        line_col = MIDPOINT,
+    #                        desired_heading = robot_left)
     time.sleep(2)
 
     # ------------------------------------------------------
+    tacho_to_cover_robot_body = robot.get_tacho_counts(30)*35
     logging.info('Moving forward before turning')
     helper.blind_forward(v=30,
-                        tacho_counts = tacho_counts_to_travel*2,
+                        tacho_counts = tacho_to_cover_robot_body,
                         expected_heading = robot_left)
     time.sleep(2)
-
+# 180 degrees turn
     logging.info('Turning the robot CW by  \
         {}'.format(robot_right-gyro.value()))
     turn_on_spot(v=30,
                     angle=robot_right-gyro.value(),
                     motor='ROBOT')
     time.sleep(2)
+    helper.forward_until_line(v=30,
+                            line_col = MIDPOINT,
+                            desired_heading = robot_left)
+    turn_on_spot(v=45,
+                 angle=servo_org,
+                 motor='SERVO')
+    helper.follow_until_dist(v=20,
+                       desired_col=MIDPOINT,
+                       desired_distance=100) #  = 10 cm
 
-    if col.value() > MIDPOINT: # cant find the left edge yet, so turn
-        control = Controller(kp=.4, ki=.01, kd=.2,
-                            r=MIDPOINT,
-                            history=10)
-        v=20
-        # keep turning turn if the diff is 5
-        while (col.value() - MIDPOINT) >= 5:
-            signal, err = control.control_signal(col.value())
-            L.run_direct(duty_cycle_sp=v+signal) # going CW
-            R.run_direct(duty_cycle_sp=v-signal)
 
-        # turn servo to the original angle (i.e. facing straight)
-        turn_on_spot(v=45,
-                        angle=servo_org,
-                        motor='SERVO')
-        return # reached midpoint
-
-    else:
-        return
+    # if col.value() > MIDPOINT: # cant find the left edge yet, so turn
+    #     control = Controller(kp=.4, ki=.01, kd=.2,
+    #                         r=MIDPOINT,
+    #                         history=10)
+    #     v=20
+    #     # keep turning turn if the diff is 5
+    #     while (col.value() - MIDPOINT) >= 5:
+    #         signal, err = control.control_signal(col.value())
+    #         L.run_direct(duty_cycle_sp=v+signal) # going CW
+    #         R.run_direct(duty_cycle_sp=v-signal)
+    #
+    #     #turn servo to the original angle (i.e. facing straight)
+    #     turn_on_spot(v=45,
+    #                     angle=servo_org,
+    #                     motor='SERVO')
+    #     return # reached midpoint
+    #
+    # else:
+    #     return
 
 # -------------------------
 # MAIN

@@ -53,7 +53,7 @@ def turn_on_spot(v, angle, motor):
 
     # -------------- SERVO ---------------------
     elif motor == 'SERVO':
-        turn_control = Controller(.85 , 0.1, 0.5,
+        turn_control = Controller(.90 , 0.1, 0.5,
                                   angle,
                                   history=10)
         servo.duty_cycle_sp = servo.duty_cycle_sp * direction

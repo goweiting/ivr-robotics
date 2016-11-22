@@ -14,6 +14,6 @@ gyro = ev3.GyroSensor(ev3.INPUT_3)
 us = ev3.UltrasonicSensor(ev3.INPUT_4)
 
 # motors
-motA = ev3.LargeMotor(ev3.OUTPUT_A)  # left motor
+motA = ev3.LargeMotor(ev3.OUTPUT_D)  # left motor
 motB = ev3.LargeMotor(ev3.OUTPUT_C)  # right motor
 servo = ev3.MediumMotor(ev3.OUTPUT_B)

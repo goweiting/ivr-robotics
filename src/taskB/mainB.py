@@ -44,22 +44,22 @@ gyro.mode = 'GYRO-ANG'
 # while not io.btn.backspace:
 #     BLACK = col.value()
 #     print BLACK
-#
-# ev3.Sound.speak('white').wait()
-# WHITE = col.value()
-# while not io.btn.backspace:
-#     WHITE = col.value()
-#     print WHITE
+
+ev3.Sound.speak('white').wait()
+WHITE = col.value()
+while not io.btn.backspace:
+    WHITE = col.value()
+    print WHITE
 
 # ------------------------------
 # Obtain MITPOINT
 # ------------------------------
-# ev3.Sound.speak('midpoint').wait()
-# MIDPOINT = col.value()
-# while not io.btn.backspace:
-#     MIDPOINT = col.value()
-#     print MIDPOINT
-# time.sleep(1)
+ev3.Sound.speak('midpoint').wait()
+MIDPOINT = col.value()
+while not io.btn.backspace:
+    MIDPOINT = col.value()
+    print MIDPOINT
+time.sleep(1)
 
 # ------------------------------
 # Obtain desired angle

@@ -19,6 +19,7 @@ class Listener(object):
         subject.register(self) # register to the subject
         self.mode = mode
         self.state = False # have not reached goal state yet
+        self.history = []
 
         assert type(subject) is Subject
         assert mode == 'GT' or mode == 'LT' or mode == 'EQ'
@@ -26,6 +27,8 @@ class Listener(object):
     def update(self, val):
         # do something with regards to the val received from the subject
         logging.info('{} : updated with {}'.format(self.__str__(), val))
+        self.history.append(val) # add into history
+        
         if self.mode == 'LT':
             if val <= self.goal_state:
                 self.state = True

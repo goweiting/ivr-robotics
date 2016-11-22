@@ -97,7 +97,7 @@ while True:  # run for 10 seconds
     gyro_vals += str(gyro.value()) + ' '
 
     logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-        col.value(), signal, err, L.speed_sp, R.speed_sp))
+        col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
 
 # Store the values for further analysis
 f.write(err_vals)

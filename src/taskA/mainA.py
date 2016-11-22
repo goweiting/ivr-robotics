@@ -55,8 +55,8 @@ L.connected
 R.connected
 L.reset()  # reset the settings
 R.reset()
-L.speed_sp = 20
-R.speed_sp = 20
+L.speed_sp = 30
+R.speed_sp = 30
 
 # SENSORS
 col.connected

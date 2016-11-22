@@ -125,14 +125,8 @@ while not isFixed:
         R.run_direct(duty_cycle_sp=-v-abs(signal_g))
         L.run_direct(duty_cycle_sp=v+abs(signal_g))
 
-    # # while not (col.value() == desired_col):
-    # signal_c, err_c = motor_col_control.control_signal(col.value())
-    # if err_c > 0:
-    #     R.run_direct(duty_cycle_sp=v+abs(signal_c))
-    #     L.run_direct(duty_cycle_sp=v+abs(signal_c))
-    # elif err_c < 0:
-    #     R.run_direct(duty_cycle_sp=-v-abs(signal_c))
-    #     L.run_direct(duty_cycle_sp=-v-abs(signal_c))
+
+
 # # -----------------------------
 # # tune find line
 # # -----------------------------

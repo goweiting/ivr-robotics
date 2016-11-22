@@ -186,53 +186,44 @@ time.sleep(2)
 ev3.Sound.speak('40')
 sonar_experiment(40,'us40.txt',2.5E3)
 
+kp=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2]
+for i in kp:  # time_sp corresponding to 2,4,6,8,10s
+    ev3.Sound.speak('Reset position, straight').wait()
+    time.sleep(5)
+    run_experiment(20,i,0,0,10,'kp_straight.txt');
 
-
-# kp=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2]
-# for i in kp:  # time_sp corresponding to 2,4,6,8,10s
-#     ev3.Sound.speak('Reset position, straight').wait()
-#     time.sleep(5)
-#     run_experiment(20,i,0,0,10,'kp_straight.txt');
-#
-# kp=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2]
-# for i in kp:  # time_sp corresponding to 2,4,6,8,10s
-#     ev3.Sound.speak('Reset position, Curve').wait()
-#     time.sleep(5)
-#     run_experiment(20,i,0,0,10,'kp_straight.txt');
+kp=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2]
+for i in kp:  # time_sp corresponding to 2,4,6,8,10s
+    ev3.Sound.speak('Reset position, Curve').wait()
+    time.sleep(5)
+    run_experiment(20,i,0,0,10,'kp_straight.txt');
 
 
 
-# kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
-# for i in kd:  # time_sp corresponding to 2,4,6,8,10s
-#     ev3.Sound.speak('Reset position, straight').wait()
-#     time.sleep(5)
-#     run_experiment(20,1.3,0,i,10,'kd_straight13.txt');
-#
-# kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
-# for i in kd:  # time_sp corresponding to 2,4,6,8,10s
-#     ev3.Sound.speak('Reset position, curve').wait()
-#     time.sleep(5)
-#     run_experiment(20,1.3,0,i,10,'kd_curve13.txt');
-#
-# ev3.Sound.speak('zero point eight').wait()
-# kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
-# for i in kd:  # time_sp corresponding to 2,4,6,8,10s
-#     ev3.Sound.speak('Reset position, straight').wait()
-#     time.sleep(5)
-#     run_experiment(20,0.8,0,i,10,'kd_straight08.txt');
+kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
+for i in kd:  # time_sp corresponding to 2,4,6,8,10s
+    ev3.Sound.speak('Reset position, straight').wait()
+    time.sleep(5)
+    run_experiment(20,1.3,0,i,10,'kd_straight13.txt');
 
-# kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
-# for i in kd:  # time_sp corresponding to 2,4,6,8,10s
-#     ev3.Sound.speak('Reset position, curve').wait()
-#     time.sleep(5)
-#     run_experiment(20,0.8,0,i,10,'kd_curve08.txt');
-#
-#
+kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
+for i in kd:  # time_sp corresponding to 2,4,6,8,10s
+    ev3.Sound.speak('Reset position, curve').wait()
+    time.sleep(5)
+    run_experiment(20,1.3,0,i,10,'kd_curve13.txt');
 
-# ki=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
-# for i in ki:  # time_sp corresponding to 2,4,6,8,10s
-#     ev3.Sound.speak('Reset position, press enter when ready').wait()
-#     time.sleep(5)
-#     run_experiment(20,X,0,i,10,'kd.txt');
+ev3.Sound.speak('zero point eight').wait()
+kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
+for i in kd:  # time_sp corresponding to 2,4,6,8,10s
+    ev3.Sound.speak('Reset position, straight').wait()
+    time.sleep(5)
+    run_experiment(20,0.8,0,i,10,'kd_straight08.txt');
+
+kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
+for i in kd:  # time_sp corresponding to 2,4,6,8,10s
+    ev3.Sound.speak('Reset position, curve').wait()
+    time.sleep(5)
+    run_experiment(20,0.8,0,i,10,'kd_curve08.txt');
+
 
 # END

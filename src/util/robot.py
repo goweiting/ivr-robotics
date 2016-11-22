@@ -22,7 +22,8 @@ class Robot(object):
         self.x = 0
         self.y = 0
         self.yaw = 0
-        self.odo = dict()
+        self.odo = dict([(10,30/2),(20,93/6),(30,162/11),(40,233/15.5),(50,309/21),(60,379/26),(70,460/32),(80,533/38),(90,602/44)]) # key-duty_speed_cycle  ~value = rate of tacho count/cm
+        self.duty_cycle_sp = 0
         self.position = (self.x, self.y, self.yaw)
 
     def goto(self, dx, dy, dyaw):
@@ -40,45 +41,18 @@ class Robot(object):
 
         # 2) calculate required_distance
         required_distance = pythagoras(dx, dy)
-
+        required_tacho_counts = self.get_tacho_counts()
         # 3) move forward
 
         # 4) check state
 
-    def odometer_cal(self, time_sp, duty_cycle_sp, speed_sp, filename=""):
+    def get_tacho_counts(self, duty_cycle_sp):
         """
-        get some readings for the odometer by using the amount of distance
-        :time_sp
-        :duty_cycle_sp
-        :speed_sp
-        :param      - filename write the tacho counts it takes if given
+        Returns the number of tacho counts need to complete given distance
         """
+        return self.odo.get(duty_cycle_sp)
 
-        global L, R
 
-        try:
-            f = open(filename, 'w')  # if filename is not defined
-        except IOError:
-            filename = "t{}d{}s{}.txt".format(time_sp, duty_cycle_sp, speed_sp)
-            f = open(filename, 'w')
-
-        op = "time_sp = {} duty_cycle_sp = {}, speed_sp = {}\n".format(
-            time_sp, duty, duty_cycle_sp, speed_sp)
-        ev3.Sound.speak('Running at duty {} for time {}'.format(
-            time_sp, duty_cycle_sp)).wait()
-
-        # divie the time_sp into 10 cycles:
-        for i in range(1, 10):
-            pos = str((L.position + R.position)) / 2  # find the average
-            op += pos + "\n"
-            L.run_timed(time_sp=time_sp / 10,
-                        duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
-            R.run_timed(time_sp=time_sp / 10,
-                        duty_cycle_sp=duty_cycle_sp, speed_sp=speed_sp)
-
-        f.write(op)
-        f.close()
-        
     def pythagoras(self, x, y):
         """
         Calculate the distance to be travelled

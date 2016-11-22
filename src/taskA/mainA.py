@@ -25,12 +25,12 @@ logging.basicConfig(format='%(levelname)s: %(message)s',
 # -----------------
 # START
 # -----------------
-
 ev3.Sound.speak('hello').wait()
 # Declare the sensors and motors for connection
 L = io.motA
 R = io.motB
 col = io.col
+gyro = io.gyro
 WHITE = None
 MIDPOINT = None
 
@@ -55,38 +55,55 @@ L.connected
 R.connected
 L.reset()  # reset the settings
 R.reset()
-L.speed_sp = 30
-R.speed_sp = 30
+L.speed_sp = 20
+R.speed_sp = 20
 
 # SENSORS
 col.connected
 col.mode = 'COL-REFLECT'
+gyro.connected
+gyro.mode = 'GYRO-ANG'
 
-kp = 1
-ki = .01
-kd = .5
-history = 10
+kp = .8
+ki = 0
+kd = .4
+history = 1
 
 control = Controller(kp, ki, kd, MIDPOINT, history)
+
 # ----------------
-# Set up writing file
+# Set up writing file#
 # ----------------
 err_vals = 'kp = {}, ki = {}, kd = {} r = {}\n'.format(kp, ki, kd,
                                                        control.desired)
-f = open('./vals.txt', 'w')
+gyro_vals = 'init={}\n'.format(gyro.value())
+f = open('vals.txt', 'w')
+g = open('gyro.txt', 'w')
 
-v = 30  # constant speed
-while col.value() < WHITE:  # run for 10 seconds
+v = 20  # constant duty_cycle_sp
+while True:  # run for 10 seconds
+
     signal, err = control.control_signal(col.value())
-    L.run_timed(time_sp=50, duty_cycle_sp=v + signal)  # going CW
-    R.run_timed(time_sp=50, duty_cycle_sp=v - signal)
+    if abs(v+signal) >= 100:  signal = 0 # prevent overflow
+    L.run_direct(duty_cycle_sp = v + signal)  # going CW
+    R.run_direct(duty_cycle_sp = v - signal)
 
-    print('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-        col.value(), signal, err, L.speed_sp, R.speed_sp))
-    # err_vals += str(err) + '\n'
-    if io.btn.backspace:  # circuit breaker  ``
+    if col.value() > WHITE or io.btn.backspace:  # circuit breaker  ``
+        L.stop()
+        R.stop()
         break
+
+    err_vals += str(err) + ' '
+    gyro_vals += str(gyro.value()) + ' '
+
+    logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+        col.value(), signal, err, L.speed_sp, R.speed_sp))
+
+# Store the values for further analysis
 f.write(err_vals)
 f.close()
+g.write(gyro_vals)
+g.close()
+
 
 # END

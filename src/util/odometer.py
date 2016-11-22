@@ -46,7 +46,9 @@ def odometer_cal(time_sp, duty_cycle_sp, speed_sp, filename):
     f.write(op)
     f.close()
 
-
+# ====================================================
+#       RUNNING EXPERIMENTS
+# ====================================================
 for i in [2000, 4000, 6000, 8000, 10000]:  # time_sp corresponding to 2,4,6,8,10s
     ev3.Sound.speak('Reset position, press enter when ready').wait()
     cont = input('Input something: ')

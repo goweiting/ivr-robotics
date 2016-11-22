@@ -129,11 +129,11 @@ ev3.Sound.speak('Running experiment').wait()
 #     time.sleep(5)
 #     run_experiment(20,0.8,0,i,10,'kd_straight08.txt');
 
-kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
-for i in kd:  # time_sp corresponding to 2,4,6,8,10s
-    ev3.Sound.speak('Reset position, curve').wait()
-    time.sleep(5)
-    run_experiment(20,0.8,0,i,10,'kd_curve08.txt');
+# kd=[0, .1, .2, .4, .8, 1, 1.3, 1.5, 1.7, 2, 2.5]
+# for i in kd:  # time_sp corresponding to 2,4,6,8,10s
+#     ev3.Sound.speak('Reset position, curve').wait()
+#     time.sleep(5)
+#     run_experiment(20,0.8,0,i,10,'kd_curve08.txt');
 
 
 

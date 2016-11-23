@@ -180,6 +180,56 @@ def find_line(v, desired_col):
                 L.run_direct(duty_cycle_sp=-new_duty)
 
 
+# on right line, starts on black
+# for wei ting!!!! 
+def fix_black_fix_right(v):
+    global L, R, col
+    desired_col = 4
+    motor_col_control = Controller(.001,0,0,desired_col,history=10)
+    isBlack = False
+    L.duty_cycle_sp = v
+    R.duty_cycle_sp = v
+    L.run_forever()
+    R.run_forever()
+    while not isBlack:
+        signal, err = motor_col_control.control_signal(col.value())
+        if err == 0:
+            L.stop()
+            R.stop()
+            ev3.Sound.speak('is black').wait()
+            isBlack = True
+        else:
+            if (v+abs(signal)) > 100:
+                signal = 0
+            if err > 0: # too much white
+                L.run_direct(duty_cycle_sp=v+abs(signal))
+                R.run_direct(duty_cycle_sp=v+abs(signal))
+            else:
+                L.run_direct(duty_cycle_sp=-v-abs(signal))
+                R.run_direct(duty_cycle_sp=-v-abs(signal))
+
+    desired_col = 12
+    motor_col_control = Controller(.0001,0,0,desired_col,history=10)
+    L.duty_cycle_sp = v
+    R.duty_cycle_sp = v
+    L.run_forever()
+    R.run_forever()
+    while True:
+        signal, err = motor_col_control.control_signal(col.value())
+        if err == 0:
+            L.stop()
+            R.stop()
+            ev3.Sound.speak('on midpoint').wait()
+            return
+        else:
+            if (v+abs(signal)) > 100:
+                signal = 0
+            if err > 0:
+                L.run_direct(duty_cycle_sp=v+abs(signal))
+            if err < 0:
+                L.run_direct(duty_cycle_sp=-v-abs(signal))
+
+
 def fix_position(v, desired_fix_angle, desired_col):
     # fix_angle : amount of angle to rotate
     # desired_col = midpoint to remain on spot

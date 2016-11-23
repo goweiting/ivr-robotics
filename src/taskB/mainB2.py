@@ -93,25 +93,26 @@ def main(direction, g, c):
     helper.follow_line(v=20,
                        direction=direction,
                        midpoint=MIDPOINT,
-                       stop_col=(BLACK+WHITE)/2,
+                       stop_col=WHITE,
                        g=g, c=c)
 
-    turn_on_spot(v=30,
+    turn_on_spot(v=70,
                  angle=nextDirection - gyro.value() - 5*direction, # some tolerance~?
                  motor='ROBOT',
                  g=g, c=c)  # TODO: extent this function
 
     helper.forward_until_line(v=30,
                              line_col=MIDPOINT,
-                             desired_heading=nextDirection - 5*direction,
+                             desired_heading=gyro.value(),
                              g=g, c=c)
 
     # face the front first
-    turn_on_spot(v=30,
-                angle=(robot_forward_heading-gyro.value())/3,
+    turn_on_spot(v=70,
+                angle=(robot_forward_heading-gyro.value())/4,
                 motor='ROBOT',
                 g=g, c=c)
 
+    print('DIRECTION CHANGES {}'.format(-1*direction))
     return -1 * direction
 
 

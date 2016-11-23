@@ -29,10 +29,10 @@ def follow_line(v, direction, midpoint, stop_col, g=None, c=None):
     :param c - a subject that tracks the value of the col
     """
     global col, L, R, gyro
-
+    history = []
     ev3.Sound.speak('Following line').wait()
     # Control:
-    control = Controller(.8, 0, .4, midpoint, 1)
+    control = Controller(.8, 0, .8, midpoint, 1)
     while True:
         col_ = col.value()
         g.set_val(gyro.value())
@@ -41,10 +41,10 @@ def follow_line(v, direction, midpoint, stop_col, g=None, c=None):
         signal, err = control.control_signal(col_) # update controller
         if abs(v+signal) >= 100:  signal = 0 # prevent overflow
 
-        if direction == 1: # outer of left line = going CW
-            L.run_direct(duty_cycle_sp = v + signal)
-            R.run_direct(duty_cycle_sp = v - signal)
-        elif direction == -1: # follow the inner of right linie = going CCW
+        if direction == 1: # inner of left line = going CW
+            L.run_direct(duty_cycle_sp = v - signal)
+            R.run_direct(duty_cycle_sp = v + signal)
+        elif direction == -1: # follow the inner of right line = going CCW
             L.run_direct(duty_cycle_sp = v - signal)
             R.run_direct(duty_cycle_sp = v + signal)
 
@@ -79,7 +79,7 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
     ev3.Sound.speak(
         'Moving forward until line is found. Color is {}'.format(line_col)).wait()
 
-
+    col_subject = Subject('col_sub')
     gyro_control = Controller(.8, 0, 0.05,
                               desired_heading,
                               history=10)  # a P controller
@@ -89,7 +89,7 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
     while True:
         c.set_val(col.value())  # update color
         g.set_val(gyro.value())
-
+        col_subject.set_val(col.value())
         if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
             L.stop()
             R.stop()

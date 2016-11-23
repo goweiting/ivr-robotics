@@ -47,7 +47,7 @@ def turn_on_spot(v, angle, motor, g, c):
             g.set_val(gyro.value())
             c.set_val(col.value())
             signal, err = turn_control.control_signal(gyro.value())
-
+            if abs(v+signal) <= 20: signal = 0; # if its too low, it doesnt move!
             L.run_direct(speed_sp=v - signal)
             R.run_direct(speed_sp=v + signal)
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(

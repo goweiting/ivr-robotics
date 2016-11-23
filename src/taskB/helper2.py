@@ -143,34 +143,7 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
             delta = col.value() - previous_col
-            # signalC, errC = col_control.control_signal(col.value())
             signal, err = gyro_control.control_signal(gyro.value())
-            # signal = signalC + signalG
-            # if errG > 0 :
-            #     newL_g = -signalG
-            #     newR_g = 0
-            # elif errG < 0:
-            #     newL_g = 0
-            #     newR_g = -signalG
-            # else:
-            #     newL_g = 0; newR_g = 0
-            #
-            # if errC > 0:
-            #     newL_c = v + signalC
-            #     newR_c = v + signalC
-            # elif errC < 0:
-            #     newL_c = - v - signalC
-            #     newR_c = - v - signalC
-            # else:
-            #     newL_c = v; newR_c = v
-            # newL = newL_g + newL_c
-            # newR = newR_g + newR_c
-            #
-            # # if (abs(v+signal)>100):
-            # #     signal = 0
-            # # signal = signal + 1*delta
-            # R.run_direct(duty_cycle_sp = newR)
-            # L.run_direct(duty_cycle_sp = newL)
 
             if (abs(v+signal)>100):
                 signal = 0
@@ -185,7 +158,6 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
 
-            # logging.info('GYRO = {},COL = {},\tcontrolC = {},\tcontrolG = {},\t err={}, \tL = {}, \tR = {}'.format(col.value(), gyro.value(), signalC, signalG, L.duty_cycle_sp, R.duty_cycle_sp))
             logging.info('GYRO = {},COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
 
             previous_col  = col.value()

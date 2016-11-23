@@ -101,23 +101,25 @@ def main(direction, g, c):
                        history=3,
                        g=g, c=c)
     time.sleep(2)
-    # helper.rotate(v=25, desired_gyro_val=nextDirection)
+
     turn_on_spot(v=200,
-                 angle=nextDirection - gyro.value() - direction*15, # some tolerance~?
+                 angle=nextDirection - gyro.value(),
                  motor='ROBOT',
                  g=g, c=c)
     time.sleep(2)
 
-    # helper3.find_line(v=25,
-    #                 desired_col=BLACK,
-    #                 midpoint = MIDPOINT,
-    #                 direction=direction)
 
     helper2.forward_until_line(v=20,
-                             line_col=MIDPOINT+5, # use black as a stop condition
-                             desired_heading=gyro.value(),
+                             line_col = MIDPOINT+5,
+                             desired_heading = nextDirection,
                              direction = direction,
                              g=g, c=c)
+    time.sleep(2)
+
+    turn_on_spot(v=200,
+                angle=robot_forward_heading,
+                motor='ROBOT',
+                g=g, c=c)
     time.sleep(2)
 
 
@@ -130,7 +132,7 @@ current = 1
 # assume starting on left, might want to make it netural such as
 # requesting user for input
 while not io.btn.backspace:
-    current = main(current,g,c)
+    nextMovement = main(current,g,c)
     continue
 
 # Write the values into file

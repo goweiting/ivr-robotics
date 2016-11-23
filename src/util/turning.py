@@ -10,7 +10,7 @@ from control import Controller
 from observer import Subject, Listener
 
 
-def turn_on_spot(v, angle, motor, g, c):
+def turn_on_spot(v, angle, motor, g=None, c=None):
     """
     Turn the robot or servo motor on the spot by the angle
     It sets the goal state of the robot or servo as the sum of its current heading (gyro.value()) and the angle.
@@ -44,15 +44,18 @@ def turn_on_spot(v, angle, motor, g, c):
         R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp+10
 
         while True:
-            g.set_val(gyro.value())
-            c.set_val(col.value())
+
             signal, err = turn_control.control_signal(gyro.value())
             if abs(v+signal) <= 20: signal = 0; # if its too low, it doesnt move!
             L.run_direct(speed_sp=v - signal)
             R.run_direct(speed_sp=v + signal)
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
                 gyro.value(), signal, err, L.speed_sp, R.speed_sp))
-
+            g.set_val(gyro.value())
+            try:
+                c.set_val(col.value())
+            except AttributeError:
+                pass
             if abs(err) <= 2 or io.btn.backspace:  # tolerance
                 L.stop()
                 R.stop()
@@ -72,14 +75,14 @@ def turn_on_spot(v, angle, motor, g, c):
         logging.info('Turning servo {} degrees'.format(angle))
 
         while True:
-            gyro_sub.set_val(gyro.value())
-            col_sub.set_val(col.value())
+
             signal, err = turn_control.control_signal(servo.position)
             if (abs(v + signal) > 100):
                 signal = 0
             servo.run_direct(speed_sp=v + abs(signal))
             logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
                 servo.position, signal, err, servo.speed_sp))
+            g.set_val(gyro.value())
             if abs(err) <= 4 or io.btn.backspace:  # tolerance
                 servo.stop()
                 servo.speed_sp = v

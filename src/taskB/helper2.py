@@ -50,15 +50,7 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
             R.duty_cycle_sp = v
             ev3.Sound.speak('I have reach the end of line').wait()
             return
-            
-        # if (v+abs(signal)) >=100: signal = 0
-        # if abs(err) >= 5:
-        #     if direction == 1:
-        #         L.run_direct(duty_cycle_sp = v-signal)
-        #         R.run_direct(duty_cycle_sp = v+signal)
-        #     elif direction == -1:
-        #         L.run_direct(duty_cycle_sp = v+signal)
-                # R.run_direct(duty_cycle_sp = v-signal)
+
         signal, err = control.control_signal(col_) # update controller
         if abs(v+signal) >= 100:  signal = 0 # prevent overflow
         if direction == 1: # inner of left line = going CW
@@ -105,48 +97,12 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
         col_subject.set_val(col.value())
         if halt_.get_state() or io.btn.backspace:
             # need to halt since distance have reached
-            L.stop()
-            R.stop()
+            L.stop(); R.stop()
             ev3.Sound.speak('Line detcted. hurray!').wait()
             logging.info('STOP! Line detected')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
-
-            # fix the position so that we are on the line
-            motor_col_control = Controller(.0001, 0, 0, line_col)
-
-            ev3.Sound.speak('Checking position').wait()
-            while True:
-                signal, err = motor_col_control.control_signal(col.value())
-                if abs(err) == 0:
-                    L.stop()
-                    R.stop()
-                    L.duty_cycle_sp = v
-                    R.duty_cycle_sp = v
-                    ev3.Sound.speak('Am I on the line now?').wait()
-                    return
-                else:
-                    if (v + abs(signal)) >= 100:
-                        signal = 0
-                    if direction == 1:
-                        # if err > 0: # seeing more black than midpoint
-                        #     # move left wheel backwards
-                        if err > 0:
-                            L.run_direct(duty_cycle_sp = v+signal)
-                        elif err < 0:
-                            L.run_direct(duty_cycle_sp = -v-signal)
-
-                    elif direction == -1:
-                        if err > 0:
-                            R.run_direct(duty_cycle_sp = v+signal)
-                        elif err < 0:
-                            R.run_direct(duty_cycle_sp = -v-signal)
-                    logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-                    c.set_val(col.value())  # update color
-                    g.set_val(gyro.value())
-            c.set_val(col.value())  # update color
-            g.set_val(gyro.value())
-
+            return
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
             delta = col.value() - previous_col
@@ -186,3 +142,57 @@ def calibrate_gyro():
     logging.info('robot_right = {}'.format(robot_right))
     gyro.mode = 'GYRO-ANG'
     return (robot_forward_heading, robot_left, robot_right)
+
+
+# ====================================================================
+def turn_on_spot(v, angle, motor, g, c):
+    """
+    Turn the robot or servo motor on the spot by the angle
+    It sets the goal state of the robot or servo as the sum of its current heading (gyro.value()) and the angle.
+    If the angle is negative, it will turn CCW.
+    """
+
+    L = io.motA
+    R = io.motB
+    servo = io.servo
+    gyro = io.gyro
+    col = io.col
+
+    if angle > 0:
+        direction = 1  # set the polairty switch for the wheels
+    elif angle < 0:
+        direction = -1
+    else: # 0 degrees = no work to be done
+        return
+
+    # -------------- ROBOT ---------------------
+    if motor == 'ROBOT':
+        desired_angle = gyro.value() + angle
+        ev3.Sound.speak(
+            'Turning robot to desired {} degrees'.format(desired_angle)).wait()
+        logging.info(
+            'Turning the robot to desired {} degrees'.format(desired_angle))
+        turn_control = Controller(.9, 0, 0.5,
+                                  desired_angle,
+                                  history=10)
+        L.duty_cycle_sp = direction * L.duty_cycle_sp+10
+        R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp+10
+
+        while True:
+            if abs(err) <= 2 or io.btn.backspace:  # tolerance
+                L.stop()
+                R.stop()
+                L.speed_sp = v
+                R.speed_sp = v
+                L.duty_cycle_sp = direction * L.duty_cycle_sp-10
+                R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp-10
+                return
+
+            signal, err = turn_control.control_signal(gyro.value())
+            if abs(v+signal) <= 20: signal = 0; # if its too low, it doesnt move!
+            L.run_direct(speed_sp=v - signal)
+            R.run_direct(speed_sp=v + signal)
+            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                gyro.value(), signal, err, L.speed_sp, R.speed_sp))
+            g.set_val(gyro.value())
+            c.set_val(col.value())

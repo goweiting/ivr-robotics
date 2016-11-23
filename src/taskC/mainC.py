@@ -61,11 +61,11 @@ while True:
         break
 logging.info('MIDPOINT = {}'.format(MIDPOINT))
 
-(robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
+(robot_forward_heading, robot_left, robot_right) = calibrate_gyro()
 
 if gyro.value() != robot_forward_heading:
     ev3.Sound.speak('Calibration Error')
-    (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
+    (robot_forward_heading, robot_left, robot_right) = calibrate_gyro()
 
 # MOTOR:
 L.reset()  # reset the settings
@@ -76,7 +76,7 @@ L.speed_sp = 20
 R.speed_sp = 20
 servo.connected
 servo.reset()
-servo.duty_cycle_sp = 40
+servo.duty_cycle_sp = 50
 servo_org = servo.position
 servo_left = servo_org - 90
 servo_right = servo_org + 90
@@ -103,11 +103,11 @@ def main():
     # -----------------------------------------------------
 
     # FINDING OBJECT
-    follow_until_dist(v=20,
+    follow_until_dist(v=30,
                       desired_col=MIDPOINT,
                       desired_distance=100,
                       g=g)  # = 10 cm
-    time.sleep(3)
+    # time.sleep(3)
 
     # HEADING FORWARD
     logging.info('reference heading = \
@@ -117,14 +117,14 @@ def main():
                  angle=robot_right - gyro.value(),
                  motor='ROBOT',
                  g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     logging.info('turn servo -90 degrees')
-    turn_on_spot(v=45,  # was 45
+    turn_on_spot(v=55,  # was 45
                  angle=servo_left,
                  motor='SERVO',
                  g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     # ----->>>---------------------------------------------
     #  HEADING SIDEWAY
@@ -137,7 +137,7 @@ def main():
                   desired_angle=robot_right,
                   threshold=thresh,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     logging.info('Moving the robot tacho count = \
         {} to maintain distance from object boundary'.format(
@@ -146,14 +146,14 @@ def main():
                   tacho_counts=tacho_counts_to_travel,
                   expected_heading=robot_right,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     logging.info('Turning ROBOT CCW')
     turn_on_spot(v=30,
                  angle=robot_forward_heading - gyro.value(),
                  motor='ROBOT',
                  g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     # --------------------------------------------------------
     # HEADING FORWARD
@@ -164,14 +164,14 @@ def main():
                   tacho_counts=tacho_counts_to_travel,
                   expected_heading=robot_forward_heading,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     logging.info('Moving forward until edge is found')
     move_in_range(v=25,
                   desired_angle=robot_forward_heading,
                   threshold=thresh,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     logging.info('Moving the robot tacho count = \
         {} for object to be away from the object'.format(
@@ -181,7 +181,7 @@ def main():
                   tacho_counts=tacho_to_cover_robot_body,
                   expected_heading=robot_forward_heading,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     # -----<<<<---------------------------------------------
     # HEADING SIDEWAY
@@ -191,7 +191,7 @@ def main():
                  angle=(robot_left - gyro.value()),
                  motor='ROBOT',
                  g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     # move extra tacho counts
     logging.info('Moving the robot tacho count = \
@@ -201,14 +201,14 @@ def main():
                   tacho_counts=tacho_counts_to_travel,
                   expected_heading=robot_left,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
     # until edge is found
     logging.info('Moving forward until edge is found')
     move_in_range(v=25,
                   desired_angle=robot_left,
                   threshold=thresh,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
 
     # ------------------------------------------------------
     tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 35
@@ -217,7 +217,7 @@ def main():
                   tacho_counts=tacho_to_cover_robot_body,
                   expected_heading=robot_left,
                   g=g)
-    time.sleep(2)
+    # time.sleep(2)
     # 180 degrees turn
     logging.info('Turning the robot CW by  \
         {}'.format(robot_right - gyro.value()))
@@ -225,7 +225,7 @@ def main():
                  angle=robot_right - gyro.value(),
                  motor='ROBOT',
                  g=g)
-    time.sleep(2)
+    # time.sleep(2)
     forward_until_line(v=30,
                        line_col=MIDPOINT,
                        desired_heading=robot_left,

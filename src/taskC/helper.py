@@ -213,7 +213,7 @@ def blind_forward(v, tacho_counts, expected_heading, g=None):
     discount = expected_heading - current_heading
     if abs(discount) >= 5:
         ev3.Sound.speak('I need to turn {} degrees'.format(discount)).wait()
-        turn_on_spot(v=30, angle=discount, motor='ROBOT')
+        turn_on_spot(v=30, angle=discount, motor='ROBOT', g=g)
         time.sleep(2)  # wait
 
     # execute moving forward:
@@ -229,7 +229,7 @@ def blind_forward(v, tacho_counts, expected_heading, g=None):
     R.run_to_abs_pos(duty_cycle_sp=v, position_sp=tacho_counts)
     logging.info('L = {}, \tR = {}'.format(L.position, R.position))
     g.set_val(gyro.value())
-    
+
 # ====================================================================
 
 

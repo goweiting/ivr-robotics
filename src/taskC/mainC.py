@@ -14,7 +14,7 @@ import logging
 # local import
 import ev3dev.ev3 as ev3
 import util.io as io
-import helper
+from helper import *
 from util.control import Controller
 from util.observer import Listener, Subject
 from util.robot import Robot
@@ -63,7 +63,7 @@ logging.info('MIDPOINT = {}'.format(MIDPOINT))
 
 (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
 
-if gyro.value() != robot_forward_heading: # TODO
+if gyro.value() != robot_forward_heading:
     ev3.Sound.speak('Calibration Error')
     (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
 
@@ -83,7 +83,9 @@ servo_right = servo_org + 90
 
 robot = Robot()
 # calculates tacho counts for 20 cm with duty_cycle of 20
-tacho_counts_to_travel = robot.get_tacho_counts(20)*20
+tacho_counts_to_travel = robot.get_tacho_counts(30) * 25
+g = Subject('Gyro monitor')
+
 
 def main():
     """
@@ -101,24 +103,27 @@ def main():
     # -----------------------------------------------------
 
     # FINDING OBJECT
-    helper.follow_until_dist(v=20,
-                       desired_col=MIDPOINT,
-                       desired_distance=100) #  = 10 cm
+    follow_until_dist(v=20,
+                      desired_col=MIDPOINT,
+                      desired_distance=100,
+                      g=g)  # = 10 cm
     time.sleep(3)
 
     # HEADING FORWARD
     logging.info('reference heading = \
         {}'.format(robot_forward_heading))
     logging.info('turning 90 degrees cw')
-    turn_on_spot(v=30,
-                    angle=robot_right-gyro.value(),
-                    motor='ROBOT')
+    turn_on_spot(v=40,  # was 30
+                 angle=robot_right - gyro.value(),
+                 motor='ROBOT',
+                 g=g)
     time.sleep(2)
 
     logging.info('turn servo -90 degrees')
-    turn_on_spot(v=45,
-                    angle=servo_left,
-                    motor='SERVO')
+    turn_on_spot(v=45,  # was 45
+                 angle=servo_left,
+                 motor='SERVO',
+                 g=g)
     time.sleep(2)
 
     # ----->>>---------------------------------------------
@@ -127,108 +132,126 @@ def main():
     thresh = 40
     logging.info('Moving robot until threshold = \
         {} is exceeded'.format(
-                    thresh)) # once us detects surrounding more than 1.5cm away, halt
-    helper.move_in_range(v=25,
-                        desired_angle=robot_right,
-                        threshold=thresh)
+        thresh))  # once us detects surrounding more than 1.5cm away, halt
+    move_in_range(v=25,
+                  desired_angle=robot_right,
+                  threshold=thresh,
+                  g=g)
     time.sleep(2)
 
     logging.info('Moving the robot tacho count = \
         {} to maintain distance from object boundary'.format(
-                    tacho_counts_to_travel))
-    helper.blind_forward(v=30,
-                        tacho_counts = tacho_counts_to_travel,
-                        expected_heading = robot_right)
+        tacho_counts_to_travel))
+    blind_forward(v=30,
+                  tacho_counts=tacho_counts_to_travel,
+                  expected_heading=robot_right,
+                  g=g)
     time.sleep(2)
 
     logging.info('Turning ROBOT CCW')
     turn_on_spot(v=30,
-                angle = robot_forward_heading - gyro.value(),
-                motor = 'ROBOT')
+                 angle=robot_forward_heading - gyro.value(),
+                 motor='ROBOT',
+                 g=g)
     time.sleep(2)
 
     # --------------------------------------------------------
     # HEADING FORWARD
     logging.info('Moving the robot tacho count = \
         {} for object to be in range'.format(
-                    tacho_counts_to_travel))
-    helper.blind_forward(v=30,
-                        tacho_counts=tacho_counts_to_travel,
-                        expected_heading = robot_forward_heading)
+        tacho_counts_to_travel))
+    blind_forward(v=30,
+                  tacho_counts=tacho_counts_to_travel,
+                  expected_heading=robot_forward_heading,
+                  g=g)
     time.sleep(2)
 
     logging.info('Moving forward until edge is found')
-    helper.move_in_range(v=25,
-                        desired_angle=robot_forward_heading,
-                        threshold = thresh)
+    move_in_range(v=25,
+                  desired_angle=robot_forward_heading,
+                  threshold=thresh,
+                  g=g)
     time.sleep(2)
 
     logging.info('Moving the robot tacho count = \
         {} for object to be away from the object'.format(
-                        tacho_counts_to_travel))
-    helper.blind_forward(v=30,
-                        tacho_counts = tacho_counts_to_travel-50,
-                        expected_heading= robot_forward_heading)
+        tacho_counts_to_travel))
+    tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 38
+    blind_forward(v=30,
+                  tacho_counts=tacho_to_cover_robot_body,
+                  expected_heading=robot_forward_heading,
+                  g=g)
     time.sleep(2)
-
 
     # -----<<<<---------------------------------------------
     # HEADING SIDEWAY
     logging.info('turning the ROBOT CCW by \
-        {}'.format(robot_left-gyro.value()))
+        {}'.format(robot_left - gyro.value()))
     turn_on_spot(v=30,
-                    angle=(robot_left-gyro.value()),
-                    motor='ROBOT')
+                 angle=(robot_left - gyro.value()),
+                 motor='ROBOT',
+                 g=g)
     time.sleep(2)
 
-    logging.info('find the line!')
-    helper.forward_until_line(v=30,
-                            line_col = MIDPOINT,
-                            desired_heading = robot_left)
+    # move extra tacho counts
+    logging.info('Moving the robot tacho count = \
+        {} for object to be in range'.format(
+        tacho_counts_to_travel))
+    blind_forward(v=30,
+                  tacho_counts=tacho_counts_to_travel,
+                  expected_heading=robot_left,
+                  g=g)
+    time.sleep(2)
+    # until edge is found
+    logging.info('Moving forward until edge is found')
+    move_in_range(v=25,
+                  desired_angle=robot_left,
+                  threshold=thresh,
+                  g=g)
     time.sleep(2)
 
     # ------------------------------------------------------
+    tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 35
     logging.info('Moving forward before turning')
-    helper.blind_forward(v=30,
-                        tacho_counts = tacho_counts_to_travel*2,
-                        expected_heading = robot_left)
+    blind_forward(v=30,
+                  tacho_counts=tacho_to_cover_robot_body,
+                  expected_heading=robot_left,
+                  g=g)
     time.sleep(2)
-
+    # 180 degrees turn
     logging.info('Turning the robot CW by  \
-        {}'.format(robot_right-gyro.value()))
+        {}'.format(robot_right - gyro.value()))
     turn_on_spot(v=30,
-                    angle=robot_right-gyro.value(),
-                    motor='ROBOT')
+                 angle=robot_right - gyro.value(),
+                 motor='ROBOT',
+                 g=g)
     time.sleep(2)
-
-    if col.value() > MIDPOINT: # cant find the left edge yet, so turn
-        control = Controller(kp=.4, ki=.01, kd=.2,
-                            r=MIDPOINT,
-                            history=10)
-        v=20
-        # keep turning turn if the diff is 5
-        while (col.value() - MIDPOINT) >= 5:
-            signal, err = control.control_signal(col.value())
-            L.run_direct(duty_cycle_sp=v+signal) # going CW
-            R.run_direct(duty_cycle_sp=v-signal)
-
-        # turn servo to the original angle (i.e. facing straight)
-        turn_on_spot(v=45,
-                        angle=servo_org,
-                        motor='SERVO')
-        return # reached midpoint
-
-    else:
-        return
+    forward_until_line(v=30,
+                       line_col=MIDPOINT,
+                       desired_heading=robot_left,
+                       g=g)
+    turn_on_spot(v=45,
+                 angle=servo_org,
+                 motor='SERVO',
+                 g=g)
 
 # -------------------------
 # MAIN
 # -------------------------
-while True:
-    ev3.Sound.speak('Press and hold Enter When ready!').wait()
-    time.sleep(3)
-    if len(io.btn.buttons_pressed) > 0:
-        ev3.Sound.speak('Begin in 3 2 1').wait()
-        main()
-        ev3.Sound.speak('continue').wait()
-        continue
+while not io.btn.backspace:  # use backspace to get out!
+    ev3.Sound.speak('Begin in 5 seconds').wait()
+    time.sleep(5)
+    main()
+    ev3.Sound.speak('continue').wait()
+    continue
+
+
+# Write the values into file
+g_vals = g.get_history()
+c_vals = c.get_history()
+file_gyro = open('./vals/gyro_val.txt', 'a')
+file_col = open('./vals/col_val.txt', 'a')
+file_col.write(' '.join(c_vals))
+file_gyro.write(' '.join(g_vals))
+file_gyro.close()
+file_col.close()

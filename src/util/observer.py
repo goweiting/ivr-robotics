@@ -26,6 +26,7 @@ class Listener(object):
     def update(self, val):
         # do something with regards to the val received from the subject
         logging.info('{} : updated with {}'.format(self.__str__(), val))
+
         if self.mode == 'LT':
             if val <= self.goal_state:
                 self.state = True
@@ -68,6 +69,7 @@ class Subject(object):
         self._string = name
         self.current_val = None
         self.listeners = [] # maintain a list of listners that it needs to notify
+        self.history = []
 
     def register(self, listener):
         """
@@ -100,10 +102,13 @@ class Subject(object):
         self.current_val = val
         # logging.info('{} update = {}'.format(self._string, self.current_val))
         self.notify_listener(self.current_val)
+        self.history.append(val)
 
     def get_val(self):
         return self.current_val
 
+    def get_history(self):
+        return self.history
 
     def __str__(self):
         return str(self._string)

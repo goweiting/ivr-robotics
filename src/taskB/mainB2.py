@@ -7,7 +7,9 @@ import math
 # local import
 import ev3dev.ev3 as ev3
 import util.io as io
-import helper2 as helper
+import helper as helper
+import helper2 as helper2
+import helper3 as helper3
 from util.control import Controller
 from util.observer import Listener, Subject
 from util.robot import Robot
@@ -44,7 +46,7 @@ while True:
     if io.btn.enter:
         WHITE = col.value()
         ev3.Sound.speak('Done').wait()
-        print('WHITE= {}'.format(WHITE))
+        print('WHITE = {}'.format(WHITE))
         break
 ev3.Sound.speak('Calibrating, BLACK').wait()
 while True:
@@ -62,12 +64,13 @@ while True:
 #         break
 # logging.info('MIDPOINT = {}'.format(MIDPOINT))
 MIDPOINT = ((WHITE+BLACK)/4) + BLACK
-STOPPOINT = 60
-(robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
-
-if gyro.value() != robot_forward_heading:
-    ev3.Sound.speak('Calibration Error').wait()
-    (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
+STOPPOINT = WHITE
+(robot_forward_heading, robot_left, robot_right) = gyro.value(), gyro.value()-90, gyro.value()+90
+# (robot_forward_heading, robot_left, robot_right) = helper2.calibrate_gyro()
+#
+# if gyro.value() != robot_forward_heading:
+#     ev3.Sound.speak('Calibration Error').wait()
+#     (robot_forward_heading, robot_left, robot_right) = helper2.calibrate_gyro()
 
 # --------------------------------------------------------------------
 # Getting raw values:
@@ -80,7 +83,7 @@ c = Subject('col vals')
 def main(direction, g, c):
     """
     """
-    global WHITE, MIDPOINT, gyro, robot_right, robot_left
+    global WHITE, BLACK, MIDPOINT, gyro, robot_right, robot_left
 
     if direction == 1:  # left
         ev3.Sound.speak('Following line on my left').wait()
@@ -91,24 +94,31 @@ def main(direction, g, c):
         logging.info('Following lince on right')
         nextDirection = robot_left
 
-    helper.follow_line(v=20,
+    helper2.follow_line(v=25,
                        direction=direction,
                        midpoint=MIDPOINT,
                        stop_col=STOPPOINT,
-                       history=5,
+                       history=3,
                        g=g, c=c)
-
-    turn_on_spot(v=150,
-                 angle=nextDirection - gyro.value() - direction*10, # some tolerance~?
+    time.sleep(2)
+    # helper.rotate(v=25, desired_gyro_val=nextDirection)
+    turn_on_spot(v=200,
+                 angle=nextDirection - gyro.value() - direction*15, # some tolerance~?
                  motor='ROBOT',
                  g=g, c=c)
+    time.sleep(2)
 
+    # helper3.find_line(v=25,
+    #                 desired_col=BLACK,
+    #                 midpoint = MIDPOINT,
+    #                 direction=direction)
 
-    helper.forward_until_line(v=20,
-                             line_col=MIDPOINT, # use black as a stop condition
+    helper2.forward_until_line(v=20,
+                             line_col=MIDPOINT+5, # use black as a stop condition
                              desired_heading=gyro.value(),
                              direction = direction,
                              g=g, c=c)
+    time.sleep(2)
 
 
     print('DIRECTION CHANGES {}'.format(-1*direction))

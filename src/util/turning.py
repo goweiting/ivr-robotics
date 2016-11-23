@@ -40,8 +40,8 @@ def turn_on_spot(v, angle, motor, g, c):
         turn_control = Controller(.9, 0, 0.5,
                                   desired_angle,
                                   history=10)
-        L.duty_cycle_sp = direction * L.duty_cycle_sp
-        R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
+        L.duty_cycle_sp = direction * L.duty_cycle_sp+10
+        R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp+10
 
         while True:
             g.set_val(gyro.value())
@@ -53,13 +53,13 @@ def turn_on_spot(v, angle, motor, g, c):
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
                 gyro.value(), signal, err, L.speed_sp, R.speed_sp))
 
-            if abs(err) <= 4 or io.btn.backspace:  # tolerance
+            if abs(err) <= 2 or io.btn.backspace:  # tolerance
                 L.stop()
                 R.stop()
                 L.speed_sp = v
                 R.speed_sp = v
-                L.duty_cycle_sp = direction * L.duty_cycle_sp
-                R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
+                L.duty_cycle_sp = direction * L.duty_cycle_sp-10
+                R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp-10
                 return
 
     # -------------- SERVO ---------------------

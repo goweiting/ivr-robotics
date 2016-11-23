@@ -181,7 +181,7 @@ def find_line(v, desired_col):
 
 
 # on right line, starts on black
-# for wei ting!!!! 
+# for wei ting!!!!
 def fix_black_fix_right(v):
     global L, R, col
     desired_col = 4

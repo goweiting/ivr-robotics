@@ -13,7 +13,6 @@ import helper3 as helper3
 from util.control import Controller
 from util.observer import Listener, Subject
 from util.robot import Robot
-from util.turning import turn_on_spot
 
 logging.basicConfig(format='%(levelname)s: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -42,30 +41,29 @@ ev3.Sound.speak('hello').wait()
 
 logging.info('-------------------CALIBRATION-------------------')
 ev3.Sound.speak('Calibrating, WHITE').wait()
-while True:
-    if io.btn.enter:
-        WHITE = col.value()
-        ev3.Sound.speak('Done').wait()
-        print('WHITE = {}'.format(WHITE))
-        break
-ev3.Sound.speak('Calibrating, BLACK').wait()
-while True:
-    if io.btn.enter:
-        BLACK = col.value()
-        ev3.Sound.speak('Done').wait()
-        print('BLACK = {}'.format(BLACK))
-        break
-# ev3.Sound.speak('Calibrating, MIDPOINT').wait()
 # while True:
 #     if io.btn.enter:
-#         MIDPOINT = col.value()
+#         WHITE = col.value()
 #         ev3.Sound.speak('Done').wait()
-#         print('MIDPOINT = {}'.format(MIDPOINT))
+#         print('WHITE = {}'.format(WHITE))
 #         break
-# logging.info('MIDPOINT = {}'.format(MIDPOINT))
-MIDPOINT = ((WHITE+BLACK)/4) + BLACK
-STOPPOINT = WHITE
-(robot_forward_heading, robot_left, robot_right) = gyro.value(), gyro.value()-90, gyro.value()+90
+# ev3.Sound.speak('Calibrating, BLACK').wait()
+# while True:
+#     if io.btn.enter:
+#         BLACK = col.value()
+#         ev3.Sound.speak('Done').wait()
+#         print('BLACK = {}'.format(BLACK))
+#         break
+ev3.Sound.speak('Calibrating, MIDPOINT').wait()
+while True:
+    if io.btn.enter:
+        MIDPOINT = col.value()
+        ev3.Sound.speak('Done').wait()
+        print('MIDPOINT = {}'.format(MIDPOINT))
+        break
+logging.info('MIDPOINT = {}'.format(MIDPOINT))
+(robot_forward_heading, robot_left, robot_right) = \
+        gyro.value(), gyro.value()-90, gyro.value()+90
 # (robot_forward_heading, robot_left, robot_right) = helper2.calibrate_gyro()
 #
 # if gyro.value() != robot_forward_heading:
@@ -83,7 +81,7 @@ c = Subject('col vals')
 def main(direction, g, c):
     """
     """
-    global WHITE, BLACK, MIDPOINT, gyro, robot_right, robot_left
+    global MIDPOINT, gyro, robot_right, robot_left, robot_forward_heading
 
     if direction == 1:  # left
         ev3.Sound.speak('Following line on my left').wait()
@@ -97,12 +95,12 @@ def main(direction, g, c):
     helper2.follow_line(v=25,
                        direction=direction,
                        midpoint=MIDPOINT,
-                       stop_col=STOPPOINT,
+                       stop_col=MIDPOINT+20,
                        history=3,
                        g=g, c=c)
     time.sleep(2)
 
-    turn_on_spot(v=200,
+    helper2.turn_on_spot(v=200,
                  angle=nextDirection - gyro.value(),
                  motor='ROBOT',
                  g=g, c=c)
@@ -110,16 +108,16 @@ def main(direction, g, c):
 
 
     helper2.forward_until_line(v=20,
-                             line_col = MIDPOINT+5,
+                             line_col = MIDPOINT,
                              desired_heading = nextDirection,
                              direction = direction,
                              g=g, c=c)
     time.sleep(2)
 
-    turn_on_spot(v=200,
-                angle=robot_forward_heading,
-                motor='ROBOT',
-                g=g, c=c)
+    herlper2.turn_on_spot(v=200,
+                        angle=robot_forward_heading,
+                        motor='ROBOT',
+                        g=g, c=c)
     time.sleep(2)
 
 

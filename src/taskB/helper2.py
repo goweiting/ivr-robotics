@@ -65,7 +65,7 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
 
         logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
             col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-        print(previous)
+        print(previous)ss
 
 # ====================================================================
 
@@ -105,43 +105,21 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
             return
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
-            delta = col.value() - previous_col
             signal, err = gyro_control.control_signal(gyro.value())
 
             if (abs(v+signal)>100):
                 signal = 0
-            signal = signal + .8*delta
             if err > 0:
-                L.run_direct(duty_cycle_sp=v + signal)
-                R.run_direct(duty_cycle_sp=v - signal)
-            elif err < 0:
                 L.run_direct(duty_cycle_sp=v - signal)
                 R.run_direct(duty_cycle_sp=v + signal)
+            elif err < 0:
+                L.run_direct(duty_cycle_sp=v + signal)
+                R.run_direct(duty_cycle_sp=v - signal)
             else:
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
 
             logging.info('GYRO = {},COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-
-            previous_col  = col.value()
-
-# ====================================================================
-def calibrate_gyro():
-    global gyro
-    ev3.Sound.speak('Calibrating Gyroscope')
-    logging.info('Calibrating Gyroscope')
-    gyro.mode = 'GYRO-CAL'
-    time.sleep(7)
-    robot_forward_heading = gyro.value()
-    robot_right = robot_forward_heading + 90
-    robot_left  = robot_forward_heading - 90
-    ev3.Sound.speak('Done').wait()
-    logging.info('Done')
-    logging.info('reference heading = {}'.format(robot_forward_heading))
-    logging.info('robot_left = {}'.format(robot_left))
-    logging.info('robot_right = {}'.format(robot_right))
-    gyro.mode = 'GYRO-ANG'
-    return (robot_forward_heading, robot_left, robot_right)
 
 
 # ====================================================================

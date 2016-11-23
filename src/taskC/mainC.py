@@ -61,11 +61,11 @@ while True:
         break
 logging.info('MIDPOINT = {}'.format(MIDPOINT))
 
-(robot_forward_heading, robot_left, robot_right) = calibrate_gyro()
+(robot_forward_heading, robot_left, robot_right) = gyro.value(), gyro.value()-90, gyro.value()+90
 
 if gyro.value() != robot_forward_heading:
     ev3.Sound.speak('Calibration Error')
-    (robot_forward_heading, robot_left, robot_right) = calibrate_gyro()
+    (robot_forward_heading, robot_left, robot_right) = gyro.value(), gyro.value()-90, gyro.value()+90
 
 # MOTOR:
 L.reset()  # reset the settings
@@ -74,9 +74,8 @@ L.duty_cycle_sp = 30
 R.duty_cycle_sp = 30
 L.speed_sp = 20
 R.speed_sp = 20
-servo.connected
 servo.reset()
-servo.duty_cycle_sp = 50
+servo.duty_cycle_sp = 45
 servo_org = servo.position
 servo_left = servo_org - 90
 servo_right = servo_org + 90
@@ -120,7 +119,7 @@ def main():
     # time.sleep(2)
 
     logging.info('turn servo -90 degrees')
-    turn_on_spot(v=55,  # was 45
+    turn_on_spot(v=45,  # was 45
                  angle=servo_left,
                  motor='SERVO',
                  g=g)
@@ -133,7 +132,7 @@ def main():
     logging.info('Moving robot until threshold = \
         {} is exceeded'.format(
         thresh))  # once us detects surrounding more than 1.5cm away, halt
-    move_in_range(v=25,
+    move_in_range(v=30, # was 25
                   desired_angle=robot_right,
                   threshold=thresh,
                   g=g)
@@ -149,7 +148,7 @@ def main():
     # time.sleep(2)
 
     logging.info('Turning ROBOT CCW')
-    turn_on_spot(v=30,
+    turn_on_spot(v=40,
                  angle=robot_forward_heading - gyro.value(),
                  motor='ROBOT',
                  g=g)
@@ -167,7 +166,7 @@ def main():
     # time.sleep(2)
 
     logging.info('Moving forward until edge is found')
-    move_in_range(v=25,
+    move_in_range(v=30,# was 25
                   desired_angle=robot_forward_heading,
                   threshold=thresh,
                   g=g)
@@ -177,7 +176,7 @@ def main():
         {} for object to be away from the object'.format(
         tacho_counts_to_travel))
     tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 38
-    blind_forward(v=30,
+    blind_forward(v=30, # was 25
                   tacho_counts=tacho_to_cover_robot_body,
                   expected_heading=robot_forward_heading,
                   g=g)
@@ -187,7 +186,7 @@ def main():
     # HEADING SIDEWAY
     logging.info('turning the ROBOT CCW by \
         {}'.format(robot_left - gyro.value()))
-    turn_on_spot(v=30,
+    turn_on_spot(v=40,
                  angle=(robot_left - gyro.value()),
                  motor='ROBOT',
                  g=g)
@@ -204,14 +203,14 @@ def main():
     # time.sleep(2)
     # until edge is found
     logging.info('Moving forward until edge is found')
-    move_in_range(v=25,
+    move_in_range(v=30, # was 25
                   desired_angle=robot_left,
                   threshold=thresh,
                   g=g)
     # time.sleep(2)
 
     # ------------------------------------------------------
-    tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 35
+    tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 38
     logging.info('Moving forward before turning')
     blind_forward(v=30,
                   tacho_counts=tacho_to_cover_robot_body,
@@ -221,7 +220,7 @@ def main():
     # 180 degrees turn
     logging.info('Turning the robot CW by  \
         {}'.format(robot_right - gyro.value()))
-    turn_on_spot(v=30,
+    turn_on_spot(v=40,
                  angle=robot_right - gyro.value(),
                  motor='ROBOT',
                  g=g)
@@ -235,12 +234,17 @@ def main():
                  motor='SERVO',
                  g=g)
 
+    follow_until_dist(v=30,
+                      desired_col=MIDPOINT,
+                      desired_distance=100,
+                      g=g)  # = 10 cm
+
 # -------------------------
 # MAIN
 # -------------------------
 while not io.btn.backspace:  # use backspace to get out!
-    ev3.Sound.speak('Begin in 5 seconds').wait()
-    time.sleep(5)
+    ev3.Sound.speak('Begin in 2 seconds').wait() # from 5
+    time.sleep(2) # from 5
     main()
     ev3.Sound.speak('continue').wait()
     continue

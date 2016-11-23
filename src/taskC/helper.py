@@ -211,10 +211,10 @@ def blind_forward(v, tacho_counts, expected_heading, g=None):
     current_heading = gyro.value(0)
     ev3.Sound.speak('My current heading is {}.'.format(current_heading)).wait()
     discount = expected_heading - current_heading
-    if abs(discount) >= 5:
-        ev3.Sound.speak('I need to turn {} degrees'.format(discount)).wait()
-        turn_on_spot(v=30, angle=discount, motor='ROBOT', g=g)
-        time.sleep(2)  # wait
+    # if abs(discount) >= 5:
+    #     ev3.Sound.speak('I need to turn {} degrees'.format(discount)).wait()
+    #     turn_on_spot(v=30, angle=discount, motor='ROBOT', g=g)
+    #     time.sleep(2)  # wait
 
     # execute moving forward:
     ev3.Sound.speak('I will travel tacho counts of {}'.format(

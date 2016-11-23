@@ -33,15 +33,15 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
     # -------------- ROBOT ---------------------
     if motor == 'ROBOT':
         desired_angle = gyro.value() + angle
-        ev3.Sound.speak(
-            'Turning robot to desired {} degrees'.format(desired_angle)).wait()
+        # ev3.Sound.speak(
+        #     'Turning robot to desired {} degrees'.format(desired_angle)).wait()
         logging.info(
             'Turning the robot to desired {} degrees'.format(desired_angle))
         turn_control = Controller(.9, 0, 0.5,
                                   desired_angle,
                                   history=10)
-        L.duty_cycle_sp = direction * L.duty_cycle_sp+10
-        R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp+10
+        L.duty_cycle_sp = direction * L.duty_cycle_sp
+        R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
 
         while True:
 
@@ -61,8 +61,8 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
                 R.stop()
                 L.speed_sp = v
                 R.speed_sp = v
-                L.duty_cycle_sp = direction * L.duty_cycle_sp-10
-                R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp-10
+                L.duty_cycle_sp = direction * L.duty_cycle_sp
+                R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
                 return
 
     # -------------- SERVO ---------------------

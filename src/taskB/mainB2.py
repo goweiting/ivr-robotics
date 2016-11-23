@@ -65,13 +65,13 @@ MIDPOINT = ((WHITE+BLACK)/2) + BLACK
 (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
 
 if gyro.value() != robot_forward_heading:
-    ev3.Sound.speak('Calibration Error')
+    ev3.Sound.speak('Calibration Error').wait()
     (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
 
 # --------------------------------------------------------------------
 # Getting raw values:
 # -------------------------------------------------------------------
-# use unexpected values
+# For plotting graphs
 g = Subject('gyro vals')
 c = Subject('col vals')
 
@@ -109,15 +109,15 @@ def main(direction, g, c):
                              g=g, c=c)
 
     # turn onto the inner edge of the net line (NEED TRIAL AND ERROR)
-    turn_control = Controller(.5,0,0, MIDPOINT, 1)
-    while True:
-        signal, err = turn_control.control_signal(col.value())
-        turn_on_spot(v=100,
-                    angle=(direction*signal),
-                    motor='ROBOT',
-                    g=g, c=c)
-        if abs(err) >= 1:
-            break
+    # turn_control = Controller(.5,0,0, MIDPOINT, 1)
+    # while True:
+    #     signal, err = turn_control.control_signal(col.value())
+    #     turn_on_spot(v=100,
+    #                 angle=(direction*signal),
+    #                 motor='ROBOT',
+    #                 g=g, c=c)
+    #     if abs(err) >= 1:
+    #         break
 
 
     print('DIRECTION CHANGES {}'.format(-1*direction))

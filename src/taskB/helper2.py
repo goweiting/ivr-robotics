@@ -42,13 +42,13 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
         c.set_val(col.value())
         previous.append(col_)
 
-        if (sum(previous)/len(previous)) >= stop_col-10 or io.btn.backspace:  # circuit breaker  ``
+        if (sum(previous)/len(previous)) >= stop_col or io.btn.backspace:  # circuit breaker  ``
             L.stop()
             R.stop()
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             ev3.Sound.speak('I have reach the end of line').wait()
-            break
+            return
 
         signal, err = control.control_signal(col_) # update controller
         if abs(v+signal) >= 100:  signal = 0 # prevent overflow
@@ -94,6 +94,9 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
 
     while True:
         col_subject.set_val(col.value())
+        c.set_val(col.value())  # update color
+        g.set_val(gyro.value())
+
         if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
             L.stop()
             R.stop()
@@ -101,7 +104,27 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
             logging.info('STOP! Line detected')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
-            return
+
+            # fix the position so that we are on the line
+            motor_col_control = Controller(.001, 0, 0, line_col)
+            ev3.Sound.speak('Checking position').wait()
+            while True:
+                c.set_val(col.value())  # update color
+                g.set_val(gyro.value())
+                signal, err = motor_col_control.control_signal(col.value())
+                if abs(err) == 0:
+                    L.stop()
+                    R.stop()
+                    ev3.Sound.speak('Am I on the line now?').wait()
+                    return
+                else:
+                    ev3.Sound.speak('Shifting').wait()
+                    if (v + abs(signal)) > 100:
+                        signal = 0
+                    if err > 0:
+                        L.run_direct(duty_cycle_sp=v + abs(signal))
+                    if err < 0:
+                        L.run_direct(duty_cycle_sp=-v - abs(signal))
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
             signal, err = gyro_control.control_signal(gyro.value())
@@ -118,8 +141,7 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
                 R.run_direct(duty_cycle_sp=v)
 
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-            c.set_val(col.value())  # update color
-            g.set_val(gyro.value())
+
 
 # ====================================================================
 def calibrate_gyro():

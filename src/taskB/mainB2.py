@@ -7,7 +7,7 @@ import math
 # local import
 import ev3dev.ev3 as ev3
 import util.io as io
-import helper
+import helper2 as helper
 from util.control import Controller
 from util.observer import Listener, Subject
 from util.robot import Robot
@@ -20,8 +20,13 @@ logging.basicConfig(format='%(levelname)s: %(message)s',
 # global vars
 L = io.motA
 R = io.motB
-servo = io.servo
-us = io.us
+L.reset()
+R.reset()
+L.speed_sp = 20
+R.speed_sp = 20
+L.duty_cycle_sp = 40
+R.duty_cycle_sp = 40
+
 gyro = io.gyro
 col = io.col
 # SENSORS
@@ -41,7 +46,13 @@ while True:
         ev3.Sound.speak('Done').wait()
         print('WHITE= {}'.format(WHITE))
         break
-
+ev3.Sound.speak('Calibrating, BLACK').wait()
+while True:
+    if io.btn.enter:
+        BLACK = col.value()
+        ev3.Sound.speak('Done').wait()
+        print('BLACK = {}'.format(BLACK))
+        break
 ev3.Sound.speak('Calibrating, MIDPOINT').wait()
 while True:
     if io.btn.enter:
@@ -61,8 +72,8 @@ if gyro.value() != robot_forward_heading:
 # Getting raw values:
 # -------------------------------------------------------------------
 # use unexpected values
-g = Listener('Gyro Listener', gyro_sub, desired_state=math.exp(100), 'GT')
-c = Listener('Color Listener', col_sub, desired_state=101, mode='GT')
+g = Subject('gyro vals')
+c = Subject('col vals')
 
 
 def main(direction, g, c):
@@ -80,20 +91,26 @@ def main(direction, g, c):
         nextDirection = robot_left
 
     helper.follow_line(v=20,
-                       direction=1,
+                       direction=direction,
                        midpoint=MIDPOINT,
-                       stop_col=WHITE,
+                       stop_col=(BLACK+WHITE)/2,
                        g=g, c=c)
 
     turn_on_spot(v=30,
-                 angle=nextDirection - gyro.value(),
+                 angle=nextDirection - gyro.value() - 5*direction, # some tolerance~?
                  motor='ROBOT',
                  g=g, c=c)  # TODO: extent this function
 
-    helper.follow_until_dist(v=30,
-                             desired_col=MIDPOINT,
-                             desired_heading=nextDirection,
+    helper.forward_until_line(v=30,
+                             line_col=MIDPOINT,
+                             desired_heading=nextDirection - 5*direction,
                              g=g, c=c)
+
+    # face the front first
+    turn_on_spot(v=30,
+                angle=(robot_forward_heading-gyro.value())/3,
+                motor='ROBOT',
+                g=g, c=c)
 
     return -1 * direction
 
@@ -105,3 +122,13 @@ current = 1
 while not io.btn.backspace:
     current = main(current,g,c)
     continue
+
+# Write the values into file
+g_vals = g.get_history();
+c_vals = c.get_history()
+file_gyro = open('./vals/gyro_val.txt', 'a')
+file_col = open('./vals/col_val.txt', 'a')
+file_col.write(' '.join(c_vals))
+file_gyro.write(' '.join(g_vals))
+file_gyro.close()
+file_col.close()

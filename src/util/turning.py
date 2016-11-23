@@ -7,6 +7,7 @@ import logging
 import io
 import ev3dev.ev3 as ev3
 from control import Controller
+from observer import Subject, Listener
 
 
 def turn_on_spot(v, angle, motor, g, c):
@@ -20,15 +21,15 @@ def turn_on_spot(v, angle, motor, g, c):
     R = io.motB
     servo = io.servo
     gyro = io.gyro
+    col = io.col
 
     if angle > 0:
         direction = 1  # set the polairty switch for the wheels
     elif angle < 0:
         direction = -1
-    gyro_sub = Subject('gyro sub')
-    col_sub = Subject('col sub')
-    gyro_sub.register(g)
-    col_sub.register(c)
+    else: # 0 degrees = no work to be done
+        return
+
     # -------------- ROBOT ---------------------
     if motor == 'ROBOT':
         desired_angle = gyro.value() + angle
@@ -41,12 +42,12 @@ def turn_on_spot(v, angle, motor, g, c):
                                   history=10)
         L.duty_cycle_sp = direction * L.duty_cycle_sp
         R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
+
         while True:
-            gyro_sub.set_val(gyro.value())
-            col_sub.set_val(col.value())
+            g.set_val(gyro.value())
+            c.set_val(col.value())
             signal, err = turn_control.control_signal(gyro.value())
-            if (abs(v + signal) > 100):
-                signal = 0
+
             L.run_direct(speed_sp=v - signal)
             R.run_direct(speed_sp=v + signal)
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
@@ -55,8 +56,8 @@ def turn_on_spot(v, angle, motor, g, c):
             if abs(err) <= 4 or io.btn.backspace:  # tolerance
                 L.stop()
                 R.stop()
-                R.speed_sp = v
                 L.speed_sp = v
+                R.speed_sp = v
                 L.duty_cycle_sp = direction * L.duty_cycle_sp
                 R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
                 return
@@ -69,6 +70,7 @@ def turn_on_spot(v, angle, motor, g, c):
         servo.duty_cycle_sp = servo.duty_cycle_sp * direction
         ev3.Sound.speak('Turning servo {} degrees'.format(angle)).wait()
         logging.info('Turning servo {} degrees'.format(angle))
+
         while True:
             gyro_sub.set_val(gyro.value())
             col_sub.set_val(col.value())

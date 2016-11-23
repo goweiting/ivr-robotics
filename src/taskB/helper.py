@@ -9,7 +9,6 @@ import time
 import ev3dev.ev3 as ev3
 import util.io as io
 from util.control import Controller
-from Observer import Listener, Subject
 
 # global vars
 L = io.motA
@@ -18,126 +17,210 @@ gyro = io.gyro
 col = io.col
 
 
-# ====================================================================
-def follow_line(v, direction, midpoint, stop_col, g=None, c=None):
-    """
-    :param v - the constant duty_cycle_sp
-    :param direction - whether we should hug the line by going cw (1) or ccw (-1)
-    :param midpoint - The desired col value that the control is set to
-    :param stop_col - The col value that will stop this function
-    :param g - a listener that tracks the value of the gyro
-    :param c - a listener that tracks the value of the col
-    """
-    global col, L, R, gyro
-    gyro_sub = Subject('gyro subject')
-    gyro_sub.register(g)
-    col_sub = Subject('col subject')
-    col_sub.register(c)
+def follow_left_line_till_end(v, midpoint, desired_col):
 
-    ev3.Sound.speak('Following line').wait()
-    # Control:
-    control = Controller(.8, 0, .4, midpoint, 1)
-    while True:
-        col_ = col.value()
-        gyro_sub.set_val(col_)
-        col_sub.set_val(gyro.value())
+    # follows left line, stays on right side
+    # desired_col = 'white' which it stops
+    global L, R, col
 
-        signal, err = control.control_signal(col_) # update controller
-        if abs(v+signal) >= 100:  signal = 0 # prevent overflow
+    ev3.Sound.speak('left line').wait() # follows right side
 
-        if direction == 1:
-            L.run_direct(duty_cycle_sp = v - signal)
-            R.run_direct(duty_cycle_sp = v + signal)
-        elif direction == -1:
-            L.run_direct(duty_cycle_sp = v + signal)
-            R.run_direct(duty_cycle_sp = v - signal)
+    kp = 2.3
+    ki = 0
+    kd = 0.5
+    motor_col_control = Controller(kp, ki, kd,
+                                    midpoint,
+                                    history=10)
 
-
-        if col.value() > stop_col or io.btn.backspace:  # circuit breaker  ``
-            L.stop()
-            R.stop()
-            ev3.Sound.speak('I have reach the end of line').wait()
-            break
-
-        logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-            col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-
-# ====================================================================
-
-def forward_until_line(v, line_col, desired_heading, g=None, c=None):
-    """
-    Robot will move forward and then stop once the line_col is detected
-    it uses the desired heading to ensure that the robot is moving straight
-
-    :param v - the duty_cycle_sp at which the motor should travel at
-    :param line_col - the line_col that should cause the robot to halt
-    (usually the MIDPOINT)
-    :param desired_heading - the gyro value that the robot should walk in
-    (hence moving in a straight)
-    """
-
-    global col, L, R, gyro
-
-    ev3.Sound.speak(
-        'Moving forward until line is found. Color is {}'.format(line_col)).wait()
-
-
-    gyro_control = Controller(.8, 0, 0.05,
-                              desired_heading,
-                              history=10)  # a P controller
-    gyro_sub = Subject('gyro subject')
-    gyro_sub.register(g)
-    col_subject = Subject('col_subject')
-    col_subject.register(c)
-    halt_ = Listener('halt_',col_subject ,
-                     line_col, 'LT')  # halt when LT (because it is black)
+    R.run_forever(duty_cycle_sp=v)
+    L.run_forever(duty_cycle_sp=v)
 
     while True:
-        col_subject.set_val(col.value())  # update color
-        gyro_sub.set_val(gyro.value())
 
-        if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
+        if col.value() >= desired_col: # if equals white then halt
             L.stop()
             R.stop()
-            ev3.Sound.speak('Line detcted. hurray!').wait()
-            logging.info('STOP!')
-            L.duty_cycle_sp = v
-            R.duty_cycle_sp = v
+            ev3.Sound.speak('end of left line').wait()
+            time.sleep(1) # give it some time to rest cos its tired af
             return
 
-        else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
-            signal, err = gyro_control.control_signal(gyro.value())
-            if (abs(v+signal)>100):
-                signal = 0
-            if err > 0:
-                L.run_direct(duty_cycle_sp=v + signal)
-                R.run_direct(duty_cycle_sp=v - signal)
-            elif err < 0:
-                L.run_direct(duty_cycle_sp=v - signal)
-                R.run_direct(duty_cycle_sp=v + signal)
-            else:
+        else:   # havent reached yet, continue following the line
+            signal, err = motor_col_control.control_signal(col.value())
+            if (v+abs(signal)) >= 100:
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
+            elif err > 0:
+                R.run_direct(duty_cycle_sp=v+abs(signal))
+                L.run_direct(duty_cycle_sp=v-abs(signal))
+            elif err < 0:
+                R.run_direct(duty_cycle_sp=v-abs(signal))
+                L.run_direct(duty_cycle_sp=v+abs(signal))
+            else:
+                R.run_direct(duty_cycle_sp=v)
+                L.run_direct(duty_cycle_sp=v)
 
-            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-                gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+
+def follow_right_line_till_end(v, midpoint, desired_col):
+    # follows right line, stays on left side
+    # desired_col = 'white' which it stops
+    global L, R, col
+
+    ev3.Sound.speak('right line').wait() # follows right side
+
+    kp = 2.3
+    ki = 0
+    kd = 0.5
+    motor_col_control = Controller(kp, ki, kd,
+                                    midpoint,
+                                    history=10)
+
+    R.run_forever(duty_cycle_sp=v)
+    L.run_forever(duty_cycle_sp=v)
+
+    while True:
+
+        if col.value() >= desired_col: # if equals white then halt
+            L.stop()
+            R.stop()
+            ev3.Sound.speak('end of right line').wait()
+            time.sleep(1) # rest is important
+            return
+
+        else:   # havent reached yet, continue following the line
+            signal, err = motor_col_control.control_signal(col.value())
+            if (v+abs(signal)) >= 100:
+                L.run_direct(duty_cycle_sp=v)
+                R.run_direct(duty_cycle_sp=v)
+            elif err > 0:
+                R.run_direct(duty_cycle_sp=v-abs(signal))
+                L.run_direct(duty_cycle_sp=v+abs(signal))
+
+            elif err < 0:
+                R.run_direct(duty_cycle_sp=v+abs(signal))
+                L.run_direct(duty_cycle_sp=v-abs(signal))
+            else:
+                R.run_direct(duty_cycle_sp=v)
+                L.run_direct(duty_cycle_sp=v)
 
 
-# ====================================================================
-
-def calibrate_gyro():
-    global gyro
-    ev3.Sound.speak('Calibrating Gyroscope')
-    logging.info('Calibrating Gyroscope')
-    gyro.mode = 'GYRO-CAL'
-    time.sleep(7)
-    robot_forward_heading = gyro.value()
-    robot_right = robot_forward_heading + 90
-    robot_left  = robot_forward_heading - 90
-    ev3.Sound.speak('Done').wait()
-    logging.info('Done')
-    logging.info('reference heading = {}'.format(robot_forward_heading))
-    logging.info('robot_left = {}'.format(robot_left))
-    logging.info('robot_right = {}'.format(robot_right))
+def rotate(v, desired_gyro_val):
+    # desired_gyro_val should not be relative to current value
+    # should be initial angle + theta
+    # rotate to the desired  gyro val
+    global L, R, gyro
     gyro.mode = 'GYRO-ANG'
-    return (robot_forward_heading, robot_left, robot_right)
+    # time.sleep(1)   # rest!!!
+    # ev3.Sound.speak('Current gyro value is {}'.format(gyro.value()))
+    # ev3.Sound.speak('Desired angle is {}'.format(desired_gyro_val))
+
+    kp = .05
+    ki = 0
+    kd = .01
+
+    sensor_gyro_control = Controller(kp, ki, kd,
+                                    desired_gyro_val,
+                                    history=10)
+
+    R.run_forever(duty_cycle_sp=v)
+    L.run_forever(duty_cycle_sp=v)
+
+    while True:
+        if gyro.value() == desired_gyro_val:
+            L.stop()
+            R.stop()
+            ev3.Sound.speak('I have rotated').wait()
+            time.sleep(1)
+            return
+        else:
+            signal, err = sensor_gyro_control.control_signal(gyro.value())
+            new_duty = v + abs(signal)
+            if new_duty >= 100:
+                new_duty = v
+
+            if err > 0: # too much clockwise
+                R.run_direct(duty_cycle_sp=new_duty)
+                L.run_direct(duty_cycle_sp=-new_duty)
+
+            elif err < 0: # too much anticlockwise
+                R.run_direct(duty_cycle_sp=-new_duty)
+                L.run_direct(duty_cycle_sp=new_duty)
+
+
+def find_line(v, desired_col):
+    # find line with colour == midpoint
+    # tries to remain a straight line
+    global L, R, gyro, col
+
+    ev3.Sound.speak('find line').wait()
+    kp = 0.00005
+    ki = 0
+    kd = 0
+    motor_col_control = Controller(kp, ki, kd,
+                                    desired_col,
+                                    history=10)
+
+    while True:
+        signal, err = motor_col_control.control_signal(col.value())
+        new_duty = v+abs(signal)
+
+        if col.value() == desired_col:
+            R.stop()
+            L.stop()
+            ev3.Sound.speak('Found line').wait()
+            time.sleep(1)
+            return
+        else:
+            if new_duty >= 100:
+                new_duty = v
+            if err > 0:
+                R.run_direct(duty_cycle_sp=new_duty)
+                L.run_direct(duty_cycle_sp=new_duty)
+            elif err < 0:
+                R.run_direct(duty_cycle_sp=-new_duty)
+                L.run_direct(duty_cycle_sp=-new_duty)
+
+
+def fix_position(v, desired_fix_angle, desired_col):
+    # fix_angle : amount of angle to rotate
+    # desired_col = midpoint to remain on spot
+    # side = 1 for right line and 0 for left line
+    global L, R, gyro, col
+
+    # ev3.Sound.speak('fix position').wait()
+
+    desired_angle = gyro.value() + desired_fix_angle
+
+    # TODO: tune this
+    motor_col_control = Controller(.0001, 0, 0,
+                                    desired_col,
+                                    history=10)
+
+    sensor_gyro_control = Controller(.0001, 0, 0,
+                                    desired_angle,
+                                    history=10)
+
+    while True:
+        signal_g, err_g = sensor_gyro_control.control_signal(gyro.value())
+        if err_g == 0:
+            while not (col.value() == desired_col):
+                signal_c, err_c = motor_col_control.control_signal(col.value())
+                if err_c > 0:
+                    R.run_direct(duty_cycle_sp=v+abs(signal_c))
+                    L.run_direct(duty_cycle_sp=v+abs(signal_c))
+                elif err_c < 0:
+                    R.run_direct(duty_cycle_sp=-v-abs(signal_c))
+                    L.run_direct(duty_cycle_sp=-v-abs(signal_c))
+            L.stop()
+            R.stop()
+            # ev3.Sound.speak('i have fixed position').wait()
+            time.sleep(1)
+            return
+        else:
+            if (v+abs(signal_g)) >= 100:
+                signal_g = 0
+            if err_g > 0:
+                R.run_direct(duty_cycle_sp=v+abs(signal_g))
+                L.run_direct(duty_cycle_sp=-v-abs(signal_g))
+            elif err_g < 0:
+                R.run_direct(duty_cycle_sp=-v-abs(signal_g))
+                L.run_direct(duty_cycle_sp=v+abs(signal_g))

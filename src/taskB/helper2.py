@@ -42,7 +42,7 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
         c.set_val(col.value())
         previous.append(col_)
 
-        if (sum(previous)/history) > stop_col or io.btn.backspace:  # circuit breaker  ``
+        if (sum(previous)/len(previous)) >= stop_col-10 or io.btn.backspace:  # circuit breaker  ``
             L.stop()
             R.stop()
             L.duty_cycle_sp = v
@@ -60,10 +60,11 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
             R.run_direct(duty_cycle_sp = v - signal)
 
         if len(previous)>history:
-            previous.popleft()
+            previous.clear()
 
         logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
             col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+        print(previous)
 
 # ====================================================================
 
@@ -116,8 +117,7 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
 
-            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-                gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
             c.set_val(col.value())  # update color
             g.set_val(gyro.value())
 

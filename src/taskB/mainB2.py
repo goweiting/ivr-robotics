@@ -11,7 +11,7 @@ import helper2 as helper
 from util.control import Controller
 from util.observer import Listener, Subject
 from util.robot import Robot
-from util.turning import turn_on_spot
+from util.turning import turn_on_spot, turn_single_wheel
 
 logging.basicConfig(format='%(levelname)s: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -53,15 +53,15 @@ while True:
         ev3.Sound.speak('Done').wait()
         print('BLACK = {}'.format(BLACK))
         break
-ev3.Sound.speak('Calibrating, MIDPOINT').wait()
-while True:
-    if io.btn.enter:
-        MIDPOINT = col.value()
-        ev3.Sound.speak('Done').wait()
-        print('MIDPOINT = {}'.format(MIDPOINT))
-        break
-logging.info('MIDPOINT = {}'.format(MIDPOINT))
-
+# ev3.Sound.speak('Calibrating, MIDPOINT').wait()
+# while True:
+#     if io.btn.enter:
+#         MIDPOINT = col.value()
+#         ev3.Sound.speak('Done').wait()
+#         print('MIDPOINT = {}'.format(MIDPOINT))
+#         break
+# logging.info('MIDPOINT = {}'.format(MIDPOINT))
+MIDPOINT = ((WHITE+BLACK)/2) + BLACK
 (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
 
 if gyro.value() != robot_forward_heading:
@@ -94,13 +94,14 @@ def main(direction, g, c):
                        direction=direction,
                        midpoint=MIDPOINT,
                        stop_col=WHITE,
-                       history=15,
+                       history=5,
                        g=g, c=c)
 
-    turn_on_spot(v=70,
-                 angle=nextDirection - gyro.value(), # some tolerance~?
+    turn_on_spot(v=100,
+                 angle=nextDirection - gyro.value() - direction*10, # some tolerance~?
                  motor='ROBOT',
                  g=g, c=c)
+
 
     helper.forward_until_line(v=30,
                              line_col=BLACK, # use black as a stop condition
@@ -108,10 +109,16 @@ def main(direction, g, c):
                              g=g, c=c)
 
     # turn onto the inner edge of the net line (NEED TRIAL AND ERROR)
-    turn_on_spot(v=70,
-                angle=(robot_forward_heading-gyro.value())/4,
-                motor='ROBOT',
-                g=g, c=c)
+    turn_control = Controller(.5,0,0, MIDPOINT, 1)
+    while True:
+        signal, err = turn_control.control_signal(col.value())
+        turn_on_spot(v=100,
+                    angle=(direction*signal),
+                    motor='ROBOT',
+                    g=g, c=c)
+        if abs(err) >= 1:
+            break
+
 
     print('DIRECTION CHANGES {}'.format(-1*direction))
     return -1 * direction

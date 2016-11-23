@@ -25,7 +25,7 @@ class Listener(object):
 
     def update(self, val):
         # do something with regards to the val received from the subject
-        logging.info('{} : updated with {}'.format(self.__str__(), val))
+        logging.info('{} : updated with {} goal is {}'.format(self.__str__(), val, self.goal_state))
 
         if self.mode == 'LT':
             if val <= self.goal_state:

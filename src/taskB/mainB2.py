@@ -11,7 +11,7 @@ import helper2 as helper
 from util.control import Controller
 from util.observer import Listener, Subject
 from util.robot import Robot
-from util.turning import turn_on_spot, turn_single_wheel
+from util.turning import turn_on_spot
 
 logging.basicConfig(format='%(levelname)s: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -61,7 +61,8 @@ while True:
 #         print('MIDPOINT = {}'.format(MIDPOINT))
 #         break
 # logging.info('MIDPOINT = {}'.format(MIDPOINT))
-MIDPOINT = ((WHITE+BLACK)/2) + BLACK
+MIDPOINT = ((WHITE+BLACK)/4) + BLACK
+STOPPOINT = 60
 (robot_forward_heading, robot_left, robot_right) = helper.calibrate_gyro()
 
 if gyro.value() != robot_forward_heading:
@@ -87,37 +88,27 @@ def main(direction, g, c):
         nextDirection = robot_right
     elif direction == -1:  # right
         ev3.Sound.speak('Following line on my right').wait()
-        logging.info('Following line on right')
+        logging.info('Following lince on right')
         nextDirection = robot_left
 
     helper.follow_line(v=20,
                        direction=direction,
                        midpoint=MIDPOINT,
-                       stop_col=WHITE,
+                       stop_col=STOPPOINT,
                        history=5,
                        g=g, c=c)
 
-    turn_on_spot(v=100,
+    turn_on_spot(v=150,
                  angle=nextDirection - gyro.value() - direction*10, # some tolerance~?
                  motor='ROBOT',
                  g=g, c=c)
 
 
-    helper.forward_until_line(v=30,
-                             line_col=BLACK, # use black as a stop condition
+    helper.forward_until_line(v=20,
+                             line_col=MIDPOINT, # use black as a stop condition
                              desired_heading=gyro.value(),
+                             direction = direction,
                              g=g, c=c)
-
-    # turn onto the inner edge of the net line (NEED TRIAL AND ERROR)
-    # turn_control = Controller(.5,0,0, MIDPOINT, 1)
-    # while True:
-    #     signal, err = turn_control.control_signal(col.value())
-    #     turn_on_spot(v=100,
-    #                 angle=(direction*signal),
-    #                 motor='ROBOT',
-    #                 g=g, c=c)
-    #     if abs(err) >= 1:
-    #         break
 
 
     print('DIRECTION CHANGES {}'.format(-1*direction))

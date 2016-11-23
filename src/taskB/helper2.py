@@ -68,7 +68,7 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
 
 # ====================================================================
 
-def forward_until_line(v, line_col, desired_heading, g=None, c=None):
+def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
     """
     Robot will move forward and then stop once the line_col is detected
     it uses the desired heading to ensure that the robot is moving straight
@@ -88,16 +88,17 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
     col_subject = Subject('col_sub')
     gyro_control = Controller(.8, 0, 0.05,
                               desired_heading,
-                              history=10)  # a P controller
+                              history=10)
+    col_control = Controller(.8, 0, 0.05,
+                            line_col,
+                            history=10)
     halt_ = Listener('halt_',col_subject ,
-                     line_col, 'LT')  # halt when LT (because it is black)
-
+                     line_col, 'LT')
+    previous_col = col.value()
     while True:
         col_subject.set_val(col.value())
-        c.set_val(col.value())  # update color
-        g.set_val(gyro.value())
-
-        if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
+        if halt_.get_state() or io.btn.backspace:
+            # need to halt since distance have reached
             L.stop()
             R.stop()
             ev3.Sound.speak('Line detcted. hurray!').wait()
@@ -106,30 +107,74 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
             R.duty_cycle_sp = v
 
             # fix the position so that we are on the line
-            motor_col_control = Controller(.001, 0, 0, line_col)
+            motor_col_control = Controller(.0001, 0, 0, line_col)
+
             ev3.Sound.speak('Checking position').wait()
             while True:
-                c.set_val(col.value())  # update color
-                g.set_val(gyro.value())
                 signal, err = motor_col_control.control_signal(col.value())
                 if abs(err) == 0:
                     L.stop()
                     R.stop()
+                    L.duty_cycle_sp = v
+                    R.duty_cycle_sp = v
                     ev3.Sound.speak('Am I on the line now?').wait()
                     return
                 else:
-                    ev3.Sound.speak('Shifting').wait()
-                    if (v + abs(signal)) > 100:
+                    if (v + abs(signal)) >= 100:
                         signal = 0
-                    if err > 0:
-                        L.run_direct(duty_cycle_sp=v + abs(signal))
-                    if err < 0:
-                        L.run_direct(duty_cycle_sp=-v - abs(signal))
+                    if direction == 1:
+                        # if err > 0: # seeing more black than midpoint
+                        #     # move left wheel backwards
+                        if err > 0:
+                            L.run_timed(time_sp=100, duty_cycle_sp = v+signal)
+                        elif err < 0:
+                            L.run_timed(time_sp=100, duty_cycle_sp = -v-signal)
+                    elif direction == -1:
+                        if err > 0:
+                            R.run_timed(time_sp=100, duty_cycle_sp = v+signal)
+                        elif err < 0:
+                            R.run_timed(time_sp=100, duty_cycle_sp = -v-signal)
+                    logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+                    c.set_val(col.value())  # update color
+                    g.set_val(gyro.value())
+            c.set_val(col.value())  # update color
+            g.set_val(gyro.value())
+
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
+            delta = col.value() - previous_col
+            # signalC, errC = col_control.control_signal(col.value())
             signal, err = gyro_control.control_signal(gyro.value())
+            # signal = signalC + signalG
+            # if errG > 0 :
+            #     newL_g = -signalG
+            #     newR_g = 0
+            # elif errG < 0:
+            #     newL_g = 0
+            #     newR_g = -signalG
+            # else:
+            #     newL_g = 0; newR_g = 0
+            #
+            # if errC > 0:
+            #     newL_c = v + signalC
+            #     newR_c = v + signalC
+            # elif errC < 0:
+            #     newL_c = - v - signalC
+            #     newR_c = - v - signalC
+            # else:
+            #     newL_c = v; newR_c = v
+            # newL = newL_g + newL_c
+            # newR = newR_g + newR_c
+            #
+            # # if (abs(v+signal)>100):
+            # #     signal = 0
+            # # signal = signal + 1*delta
+            # R.run_direct(duty_cycle_sp = newR)
+            # L.run_direct(duty_cycle_sp = newL)
+
             if (abs(v+signal)>100):
                 signal = 0
+            signal = signal + .5*delta
             if err > 0:
                 L.run_direct(duty_cycle_sp=v + signal)
                 R.run_direct(duty_cycle_sp=v - signal)
@@ -140,8 +185,10 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
 
-            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+            # logging.info('GYRO = {},COL = {},\tcontrolC = {},\tcontrolG = {},\t err={}, \tL = {}, \tR = {}'.format(col.value(), gyro.value(), signalC, signalG, L.duty_cycle_sp, R.duty_cycle_sp))
+            logging.info('GYRO = {},COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
 
+            previous_col  = col.value()
 
 # ====================================================================
 def calibrate_gyro():

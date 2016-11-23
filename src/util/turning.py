@@ -9,50 +9,6 @@ import ev3dev.ev3 as ev3
 from control import Controller
 from observer import Subject, Listener
 
-def turn_single_wheel(v, desired_angle, desired_col, g, c):
-    """
-    turn the robot using one wheel only, stop when the color OR when the gyro is at desired_angle
-    To turn CW, use the left wheel only
-    To turn CCW, use the right wheel only
-    """
-    L = io.motA
-    R = io.motB
-    col = io.col
-    gyro = io.gyro
-
-    if desired_angle - gyro.value()> 0:
-        direction = 1 # turn CW
-        halt_gyro = Listener('gyro reached?', g, desired_angle, 'GT')
-    elif desired_angle - gyro.value() < 0:
-        direction = -1 # turn CCW
-        halt_gyro = Listener('gyro reached?', g, desired_angle, 'GT')
-    else:
-        return
-    print(direction)
-    halt_col = Listener('col reached?', c, desired_col, 'LT')
-
-    ev3.Sound.speak(
-        'Turning robot to desired {} degrees OR'.format(desired_angle)).wait()
-    # set up some listeners
-    ev3.Sound.speak(
-        'turning until desired color {}     seen'.format(desired_col)).wait()
-
-    while True:
-        c.set_val(col.value())
-        g.set_val(gyro.value())
-
-        if halt_gyro.get_state() or halt_col.get_state() or io.btn.backspace:
-            L.stop()
-            R.stop()
-            L.duty_cycle_sp = v
-            R.duty_cycle_sp = v
-            ev3.Sound.speak('STOP').wait()
-            logging.info('STOPPING')
-            return
-
-        else:
-            L.run_direct(duty_cycle_sp=direction*v)
-
 
 def turn_on_spot(v, angle, motor, g, c):
     """

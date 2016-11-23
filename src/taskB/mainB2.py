@@ -94,19 +94,20 @@ def main(direction, g, c):
                        direction=direction,
                        midpoint=MIDPOINT,
                        stop_col=WHITE,
+                       history=15,
                        g=g, c=c)
 
     turn_on_spot(v=70,
-                 angle=nextDirection - gyro.value() - 5*direction, # some tolerance~?
+                 angle=nextDirection - gyro.value(), # some tolerance~?
                  motor='ROBOT',
-                 g=g, c=c)  # TODO: extent this function
+                 g=g, c=c)
 
     helper.forward_until_line(v=30,
-                             line_col=MIDPOINT,
+                             line_col=BLACK, # use black as a stop condition
                              desired_heading=gyro.value(),
                              g=g, c=c)
 
-    # face the front first
+    # turn onto the inner edge of the net line (NEED TRIAL AND ERROR)
     turn_on_spot(v=70,
                 angle=(robot_forward_heading-gyro.value())/4,
                 motor='ROBOT',

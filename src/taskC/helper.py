@@ -26,7 +26,9 @@ gyro = io.gyro
 col = io.col
 
 # ====================================================================
-def follow_until_dist(v, desired_col, desired_distance):
+
+
+def follow_until_dist(v, desired_col, desired_distance, g=None):
     """
     When called, robot will move follow the line
     :param: v - the duty_cycle_sp at which the motor should travel at
@@ -44,14 +46,14 @@ def follow_until_dist(v, desired_col, desired_distance):
                               desired_col,
                               history=10)  # a P controller
     distance_subject = Subject('distance_subject')
-    #distance_to_record = int(desired_distance*1.5) #TODO:try 1.5???
+    # distance_to_record = int(desired_distance*1.5) #TODO:try 1.5???
     halt_ = Listener('halt_', distance_subject,
                      desired_distance, 'LT')  # halt when LT desired_distance
 
     while True:
         distance_subject.set_val(us.value())  # update the subject
 
-        if halt_.get_state() or io.btn.backspace: # need to halt since distance have reached
+        if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
             L.stop()
             R.stop()
             ev3.Sound.speak('Object detected at range {}'.format(
@@ -63,13 +65,17 @@ def follow_until_dist(v, desired_col, desired_distance):
 
         else:  # havent reach yet, continnue following the line
             signal, err = line_control.control_signal(col.value())
-            if (abs(v+signal)>100):
+            if (abs(v + signal) > 100):
                 signal = 0
             L.run_direct(duty_cycle_sp=v + signal)
             R.run_direct(duty_cycle_sp=v - signal)
 
+            # For monitoring
+            g.set_val(gyro.value())
 # ====================================================================
-def forward_until_line(v, line_col, desired_heading):
+
+
+def forward_until_line(v, line_col, desired_heading, g=None):
     """
     Robot will move forward and then stop once the line_col is detected
     it uses the desired heading to ensure that the robot is moving straight
@@ -91,7 +97,7 @@ def forward_until_line(v, line_col, desired_heading):
                               desired_heading,
                               history=10)  # a P controller
     col_subject = Subject('col_subject')
-    halt_ = Listener('halt_',col_subject ,
+    halt_ = Listener('halt_', col_subject,
                      line_col, 'LT')  # halt when LT (because it is black)
 
     while True:
@@ -108,7 +114,7 @@ def forward_until_line(v, line_col, desired_heading):
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
             signal, err = gyro_control.control_signal(gyro.value())
-            if (abs(v+signal)>100):
+            if (abs(v + signal) > 100):
                 signal = 0
             if err > 0:
                 L.run_direct(duty_cycle_sp=v + signal)
@@ -122,10 +128,12 @@ def forward_until_line(v, line_col, desired_heading):
 
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
                 gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-
+            g.set_val(gyro.value())
 
 # ====================================================================
-def move_in_range(v, desired_angle, threshold):
+
+
+def move_in_range(v, desired_angle, threshold, g=None):
     """
     The goal is to move along the boundary of the object
     The boundary of the object is defined by the :param desired_range. Hence
@@ -136,34 +144,31 @@ def move_in_range(v, desired_angle, threshold):
     """
 
     global L, R, us, gyro
-    ev3.Sound.speak( \
-       'Tracing the object. Stop at threshold of {}'.format(threshold)).wait()
+    ev3.Sound.speak(
+        'Tracing the object. Stop at threshold of {}'.format(threshold)).wait()
     logging.info('Tracing the object. Stop at threshold of \
         {}'.format(threshold))
 
-    initial_range = us.value() # get the current range
+    initial_range = us.value()  # get the current range
     threshold_subject = Subject('threshold_subject')
     # halt if the value is greater than threshold
-    halt_ = Listener('halt_', threshold_subject,\
+    halt_ = Listener('halt_', threshold_subject,
                      threshold, 'GT')
 
     # maintain facing the desired angle
     desired_angle_control = Controller(.7, 0, 0.04,
                                        desired_angle,
                                        history=10)
-
-    # maintain the range within the object
-    # range_maintain = Controller(.1,0,0,
-    #                             initial_range,
-    #                             history=10)
     time.sleep(2)
+
     while True:
-        threshold_subject.set_val(us.value() - initial_range) # update with the difference
+        # update with the difference
+        threshold_subject.set_val(us.value() - initial_range)
         if halt_.get_state() or io.btn.backspace:
             # move forward x distance when out of range value is detected
             L.stop()
             R.stop()
-            L.duty_cycle_sp = v # reset the value
+            L.duty_cycle_sp = v  # reset the value
             R.duty_cycle_sp = v
             ev3.Sound.speak('Edge detected').wait()
             logging.info('Edge detected!')
@@ -171,33 +176,25 @@ def move_in_range(v, desired_angle, threshold):
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
             signal, err = desired_angle_control.control_signal(gyro.value())
-            if (abs(v+signal)>100):
+            if (abs(v + signal) > 100):
                 signal = 0
-            if err > 0: # current angle is greater than wanted - need to turn left to get closer
+            if err > 0:  # current angle is greater than wanted - need to turn left to get closer
                 L.run_direct(duty_cycle_sp=v - abs(signal))
                 R.run_direct(duty_cycle_sp=v + abs(signal))
-            elif err < 0:# current angle is less than wanted- need to turn right to get closer
+            elif err < 0:  # current angle is less than wanted- need to turn right to get closer
                 L.run_direct(duty_cycle_sp=v + abs(signal))
                 R.run_direct(duty_cycle_sp=v - abs(signal))
             else:
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
 
-            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-
-            # signal, err = range_maintain.control_signal(us.value())
-            # # Since object is on the left, we want to hug the object
-            # if (abs(v+signal)>100):
-            #     signal = 0
-            # L.run_direct(duty_cycle_sp=v - signal)
-            # R.run_direct(duty_cycle_sp=v + signal)
-            # logging.info('US = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(us.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-
-
+            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+            g.set_val(gyro.value())
 
 
 # ====================================================================
-def blind_forward(v, tacho_counts, expected_heading):
+def blind_forward(v, tacho_counts, expected_heading, g=None):
     """
     Given the number of tacho counts, robot moves forward.
     if the current gyro value is NOT the expected heading, then turn the robot
@@ -217,19 +214,24 @@ def blind_forward(v, tacho_counts, expected_heading):
     if abs(discount) >= 5:
         ev3.Sound.speak('I need to turn {} degrees'.format(discount)).wait()
         turn_on_spot(v=30, angle=discount, motor='ROBOT')
-        time.sleep(2) # wait
+        time.sleep(2)  # wait
 
     # execute moving forward:
-    ev3.Sound.speak('I will travel tacho counts of {}'.format(abs(tacho_counts))).wait()
+    ev3.Sound.speak('I will travel tacho counts of {}'.format(
+        abs(tacho_counts))).wait()
     logging
-    L.reset(); R.reset()
+    L.reset()
+    R.reset()
     time.sleep(3)
-    tacho_counts = L.position + tacho_counts # should be 0 for position
+    tacho_counts = L.position + tacho_counts  # should be 0 for position
     # Move by this number of tacho counts
-    L.run_to_abs_pos(duty_cycle_sp= v, position_sp = tacho_counts )
-    R.run_to_abs_pos(duty_cycle_sp= v, position_sp = tacho_counts )
+    L.run_to_abs_pos(duty_cycle_sp=v, position_sp=tacho_counts)
+    R.run_to_abs_pos(duty_cycle_sp=v, position_sp=tacho_counts)
     logging.info('L = {}, \tR = {}'.format(L.position, R.position))
+    g.set_val(gyro.value())
+    
 # ====================================================================
+
 
 def calibrate_gyro():
     global gyro
@@ -239,7 +241,7 @@ def calibrate_gyro():
     time.sleep(7)
     robot_forward_heading = gyro.value()
     robot_right = robot_forward_heading + 90
-    robot_left  = robot_forward_heading - 90
+    robot_left = robot_forward_heading - 90
     ev3.Sound.speak('Done').wait()
     logging.info('Done')
     logging.info('reference heading = {}'.format(robot_forward_heading))

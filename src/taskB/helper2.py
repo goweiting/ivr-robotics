@@ -5,7 +5,7 @@
 # imports
 import logging
 import time
-
+from collections import deque
 import ev3dev.ev3 as ev3
 import util.io as io
 from util.control import Controller
@@ -19,43 +19,48 @@ col = io.col
 
 
 # ====================================================================
-def follow_line(v, direction, midpoint, stop_col, g=None, c=None):
+def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
     """
     :param v - the constant duty_cycle_sp
-    :param direction - whether we should hug the line by going cw (1) or ccw (-1)
+    :param direction - whether we should hug the inner line by going cw (1) or ccw (-1)
     :param midpoint - The desired col value that the control is set to
     :param stop_col - The col value that will stop this function
+    :param history - Number of past color samples to consider
     :param g - a subject that tracks the value of the gyro
     :param c - a subject that tracks the value of the col
     """
     global col, L, R, gyro
-    history = []
+
     ev3.Sound.speak('Following line').wait()
     # Control:
     control = Controller(.8, 0, .8, midpoint, 1)
+    previous = deque([])
+
     while True:
         col_ = col.value()
         g.set_val(gyro.value())
         c.set_val(col.value())
+        previous.append(col_)
 
-        signal, err = control.control_signal(col_) # update controller
-        if abs(v+signal) >= 100:  signal = 0 # prevent overflow
-
-        if direction == 1: # inner of left line = going CW
-            L.run_direct(duty_cycle_sp = v - signal)
-            R.run_direct(duty_cycle_sp = v + signal)
-        elif direction == -1: # follow the inner of right line = going CCW
-            L.run_direct(duty_cycle_sp = v - signal)
-            R.run_direct(duty_cycle_sp = v + signal)
-
-
-        if col.value() > stop_col or io.btn.backspace:  # circuit breaker  ``
+        if (sum(previous)/history) > stop_col or io.btn.backspace:  # circuit breaker  ``
             L.stop()
             R.stop()
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             ev3.Sound.speak('I have reach the end of line').wait()
             break
+
+        signal, err = control.control_signal(col_) # update controller
+        if abs(v+signal) >= 100:  signal = 0 # prevent overflow
+        if direction == 1: # inner of left line = going CW
+            L.run_direct(duty_cycle_sp = v - signal)
+            R.run_direct(duty_cycle_sp = v + signal)
+        elif direction == -1: # follow the inner of right line = going CCW
+            L.run_direct(duty_cycle_sp = v + signal)
+            R.run_direct(duty_cycle_sp = v - signal)
+
+        if len(previous)>history:
+            previous.popleft()
 
         logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
             col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
@@ -87,14 +92,12 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
                      line_col, 'LT')  # halt when LT (because it is black)
 
     while True:
-        c.set_val(col.value())  # update color
-        g.set_val(gyro.value())
         col_subject.set_val(col.value())
         if halt_.get_state() or io.btn.backspace:  # need to halt since distance have reached
             L.stop()
             R.stop()
             ev3.Sound.speak('Line detcted. hurray!').wait()
-            logging.info('STOP!')
+            logging.info('STOP! Line detected')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             return
@@ -115,7 +118,8 @@ def forward_until_line(v, line_col, desired_heading, g=None, c=None):
 
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
                 gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-
+            c.set_val(col.value())  # update color
+            g.set_val(gyro.value())
 
 # ====================================================================
 def calibrate_gyro():

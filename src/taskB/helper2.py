@@ -65,7 +65,7 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
 
         logging.info('COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
             col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-        print(previous)ss
+        print(previous)
 
 # ====================================================================
 
@@ -157,7 +157,9 @@ def turn_on_spot(v, angle, motor, g, c):
         R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp+10
 
         while True:
-            if abs(err) <= 2 or io.btn.backspace:  # tolerance
+            signal, err = turn_control.control_signal(gyro.value())
+
+            if abs(err) <= 5 or io.btn.backspace:  # tolerance
                 L.stop()
                 R.stop()
                 L.speed_sp = v
@@ -166,7 +168,6 @@ def turn_on_spot(v, angle, motor, g, c):
                 R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp-10
                 return
 
-            signal, err = turn_control.control_signal(gyro.value())
             if abs(v+signal) <= 20: signal = 0; # if its too low, it doesnt move!
             L.run_direct(speed_sp=v - signal)
             R.run_direct(speed_sp=v + signal)
@@ -174,3 +175,25 @@ def turn_on_spot(v, angle, motor, g, c):
                 gyro.value(), signal, err, L.speed_sp, R.speed_sp))
             g.set_val(gyro.value())
             c.set_val(col.value())
+
+
+
+# ====================================================================
+
+
+def calibrate_gyro():
+    global gyro
+    ev3.Sound.speak('Calibrating Gyroscope')
+    logging.info('Calibrating Gyroscope')
+    gyro.mode = 'GYRO-CAL'
+    time.sleep(7)
+    robot_forward_heading = gyro.value()
+    robot_right = robot_forward_heading + 90
+    robot_left = robot_forward_heading - 90
+    ev3.Sound.speak('Done').wait()
+    logging.info('Done')
+    logging.info('reference heading = {}'.format(robot_forward_heading))
+    logging.info('robot_left = {}'.format(robot_left))
+    logging.info('robot_right = {}'.format(robot_right))
+    gyro.mode = 'GYRO-ANG'
+    return (robot_forward_heading, robot_left, robot_right)

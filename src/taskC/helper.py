@@ -12,7 +12,7 @@ import time
 import math
 
 import ev3dev.ev3 as ev3
-import util.io as io
+import util.robotio as io
 from util.control import Controller
 from util.observer import Listener, Subject
 from util.turning import turn_on_spot
@@ -144,8 +144,8 @@ def move_in_range(v, desired_angle, threshold, g=None):
     """
 
     global L, R, us, gyro
-    ev3.Sound.speak(
-        'Tracing the object. Stop at threshold of {}'.format(threshold)).wait()
+    # ev3.Sound.speak(
+        # 'Tracing the object. Stop at threshold of {}'.format(threshold)).wait()
     logging.info('Tracing the object. Stop at threshold of \
         {}'.format(threshold))
 
@@ -209,24 +209,25 @@ def blind_forward(v, tacho_counts, expected_heading, g=None):
     global L, R, gyro
 
     current_heading = gyro.value(0)
-    ev3.Sound.speak('My current heading is {}.'.format(current_heading)).wait()
-    discount = expected_heading - current_heading
+    # ev3.Sound.speak('My current heading is {}.'.format(current_heading)).wait()
+    # discount = expected_heading - current_heading
     # if abs(discount) >= 5:
     #     ev3.Sound.speak('I need to turn {} degrees'.format(discount)).wait()
-    #     turn_on_spot(v=30, angle=discount, motor='ROBOT', g=g)
+        # turn_on_spot(v=30, angle=discount, motor='ROBOT', g=g)
     #     time.sleep(2)  # wait
 
     # execute moving forward:
-    ev3.Sound.speak('I will travel tacho counts of {}'.format(
-        abs(tacho_counts))).wait()
+    # ev3.Sound.speak('I will travel tacho counts of {}'.format(
+        # abs(tacho_counts))).wait()
     logging
     L.reset()
     R.reset()
     time.sleep(3)
-    tacho_counts = L.position + tacho_counts  # should be 0 for position
+    L_tacho_counts = L.position + tacho_counts  # should be 0 for position
+    R_tacho_counts = R.position + tacho_counts
     # Move by this number of tacho counts
-    L.run_to_abs_pos(duty_cycle_sp=v, position_sp=tacho_counts)
-    R.run_to_abs_pos(duty_cycle_sp=v, position_sp=tacho_counts)
+    L.run_to_abs_pos(duty_cycle_sp=v, position_sp=L_tacho_counts)
+    R.run_to_abs_pos(duty_cycle_sp=v, position_sp=R_tacho_counts)
     logging.info('L = {}, \tR = {}'.format(L.position, R.position))
     g.set_val(gyro.value())
 

@@ -40,7 +40,7 @@ col.mode = 'COL-REFLECT'
 ev3.Sound.speak('hello').wait()
 
 logging.info('-------------------CALIBRATION-------------------')
-ev3.Sound.speak('Calibrating, WHITE').wait()
+# ev3.Sound.speak('Calibrating, WHITE').wait()
 # while True:
 #     if io.btn.enter:
 #         WHITE = col.value()
@@ -62,9 +62,9 @@ while True:
         print('MIDPOINT = {}'.format(MIDPOINT))
         break
 logging.info('MIDPOINT = {}'.format(MIDPOINT))
-(robot_forward_heading, robot_left, robot_right) = \
-        gyro.value(), gyro.value()-90, gyro.value()+90
-# (robot_forward_heading, robot_left, robot_right) = helper2.calibrate_gyro()
+# (robot_forward_heading, robot_left, robot_right) = \
+#         gyro.value(), gyro.value()-90, gyro.value()+90
+(robot_forward_heading, robot_left, robot_right) = helper2.calibrate_gyro()
 #
 # if gyro.value() != robot_forward_heading:
 #     ev3.Sound.speak('Calibration Error').wait()
@@ -114,7 +114,7 @@ def main(direction, g, c):
                              g=g, c=c)
     time.sleep(2)
 
-    herlper2.turn_on_spot(v=200,
+    helper2.turn_on_spot(v=200,
                         angle=robot_forward_heading,
                         motor='ROBOT',
                         g=g, c=c)

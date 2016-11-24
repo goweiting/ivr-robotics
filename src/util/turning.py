@@ -76,7 +76,7 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
     # -------------- SERVO ---------------------
     elif motor == 'SERVO':
         turn_control = Controller(.001, 0, .5,
-                                  angle,
+                                  servo.position + angle,
                                   history=10)
         # servo.duty_cycle_sp = servo.duty_cycle_sp * direction
         ev3.Sound.speak('Turning servo {} degrees'.format(angle)).wait()

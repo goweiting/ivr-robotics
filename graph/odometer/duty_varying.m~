@@ -31,8 +31,9 @@ end
 
 plot (data', 'Linewidth', 2)
 title('Tacho counts with varying duty cycle for 4000ms');
-set(gca, 'Xtick', 0:4:40, 'XTickLabel', XTickLabels(1:end), 'XTickLabelRotation', 90)
+
 xlabel('Time (ms)')
+
 ylabel('Average Tacho Counts between L and R motor')
 legend(labels, 'Location', 'best')
 saveas(figure(1), 'duty_varying.jpg'); % Saves as a jpg

@@ -16,14 +16,18 @@ labels = cell(n,1);
 % XTickLabels = cell(n,1);
 figure; hold on;
 for i=1:n
-    labels{i} = sprintf('time %d, dist %.1f', time(i), dist(i));
+    labels{i} = sprintf('time %d ms, dist %.1f cm', time(i), dist(i));
     data(i,:) = [dataStrct{i} zeros(1, 100-length(dataStrct{i}))];
-%     plot(dataStrct{i}, 'LineWidth', 2)
+end
+
+for i=1:11
+    XTickLabels{i} = sprintf('%d', (i-1)*1000);
 end
 
 plot(data', 'LineWidth', 2)
 title('Tacho counts with varying time and constant duty 25');
-xlabel('Time (100 ms interval)')
+xlabel('Time (ms)')
+set(gca, 'XTickLabel', XTickLabels, 'XTickLabelRotation', 90)
 ylabel('Average Tacho Counts between L and R motor')
 legend(labels, 'Location', 'best')
-saveas(figure(1), 'time_varying2.jpg'); % Saves as a jpg
+saveas(figure(1), 'time_varying.jpg'); % Saves as a jpg

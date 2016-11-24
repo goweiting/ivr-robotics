@@ -44,7 +44,7 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
             ev3.Sound.speak('I have reach the end of line').wait()
-            return
+            return g, c
         else:
             signal, err = control.control_signal(col.value()) # update controller
             if abs(v+signal) >= 100: signal = 0
@@ -97,7 +97,7 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
             logging.info('STOP! Line detected')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
-            return
+            return g, c
 
         else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
             signal, err = gyro_control.control_signal(gyro.value())
@@ -115,6 +115,8 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
                 R.run_direct(duty_cycle_sp=v)
 
             logging.info('GYRO = {},COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+            g.set_val(gyro.value())
+            c.set_val(col.value())
 
 
  # ====================================================================

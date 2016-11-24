@@ -141,7 +141,7 @@ def turn_one_wheel(v, angle, motor, g=None, c=None):
                 R.stop()
                 L.duty_cycle_sp = v
                 R.duty_cycle_sp = v
-                return
+                return g, c
 
             else:
                 # if too small or too large, just use the default v

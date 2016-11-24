@@ -2,7 +2,8 @@ import math
 import logging
 
 import ev3dev.ev3 as ev3
-import io
+import robotio as io
+from turning import *
 from control import Controller
 
 L = io.motA

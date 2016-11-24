@@ -1,9 +1,0 @@
-notes:
-follow_until_dist :
-  control used for moving along the line (similar to taskA)
-
-forward_until_line:
-  gyro_control used to move forward until the black line is found (similar to moving straight using gyro)
-
-move_in_range:
-  

@@ -74,43 +74,32 @@ def main(direction, g, c):
         nextDirection = robot_left
 
 
-    follow_line(v=20,
+    g,c = follow_line(v=20,
                direction=direction,
                midpoint=MIDPOINT,
                stop_col=MIDPOINT+30,
                history=1,
                g=g, c=c)
-    time.sleep(2)
-
-     # how much to turn to reach nextDirection
-    # turn_on_spot(v=30,
-    #              angle=nextDirection-gyro.value(),
-    #              motor='ROBOT',
-    #              g=g, c=c)
     # time.sleep(2)
-    turn_one_wheel(v=30,
+
+    g,c = turn_one_wheel(v=30,
                  angle=nextDirection-gyro.value(),
                  motor='ROBOT',
                  g=g, c=c)
-    time.sleep(2)
+    # time.sleep(2)
 
-    forward_until_line(v=20,
+    g,c = forward_until_line(v=20,
                      line_col = MIDPOINT,
                      desired_heading = nextDirection,
                      direction = direction,
                      g=g, c=c)
-    time.sleep(2)
-
-    # turn_on_spot(v=30,
-    #                 angle=(robot_forward_heading-gyro.value())/4,
-    #                 motor='ROBOT',
-    #                 g=g, c=c)
     # time.sleep(2)
-    turn_one_wheel(v=30,
+
+    g,c = turn_one_wheel(v=30,
                  angle=robot_forward_heading-gyro.value()+direction*10,
                  motor='ROBOT',
                  g=g, c=c)
-    time.sleep(2)
+    # time.sleep(2)
 
     print('DIRECTION CHANGES {}'.format(-1*direction))
     return -1 * direction
@@ -120,16 +109,25 @@ def main(direction, g, c):
 current = 1
 # assume starting on left, might want to make it netural such as
 # requesting user for input
-while not io.btn.backspace:
+while True:
+    if len(io.btn.buttons_pressed) > 0:
+        ev3.Sound.speak('WRITING FILES')
+        break
     current = main(current,g,c) # do it recursively
-    continue
+    ev3.Sound.speak('Next line').wait()
 
+print('printing')
 # Write the values into file
-g_vals = g.get_history();
+g_vals = g.get_history()
+print(g_vals)
 c_vals = c.get_history()
-file_gyro = open('./vals/gyro_val.txt', 'a')
-file_col = open('./vals/col_val.txt', 'a')
-file_col.write(' '.join(c_vals))
-file_gyro.write(' '.join(g_vals))
+print(c_vals)
+
+file_gyro = open('gyro_val.txt', 'w')
+for item in g_vals:
+    file_gyro.write('{} '.format(item))
 file_gyro.close()
+file_col = open('col_val.txt', 'w')
+for item in c_vals:
+    file_col.write('{} '.format(item))
 file_col.close()

@@ -32,7 +32,7 @@ def follow_line(v, direction, midpoint, stop_col, history, g=None, c=None):
     """
     global col, L, R, gyro
 
-    ev3.Sound.speak('Following line').wait()
+    # ev3.Sound.speak('Following line').wait()
     # Control:
     control = Controller(.9 , 0, .4, midpoint, 3)
 
@@ -93,7 +93,7 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
         if halt_.get_state() or io.btn.backspace:
             # need to halt since distance have reached
             L.stop(); R.stop()
-            ev3.Sound.speak('Line detcted. hurray!').wait()
+            # ev3.Sound.speak('Line detcted. hurray!').wait()
             logging.info('STOP! Line detected')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v

@@ -80,26 +80,22 @@ def main(direction, g, c):
                stop_col=MIDPOINT+30,
                history=1,
                g=g, c=c)
-    # time.sleep(2)
 
     g,c = turn_one_wheel(v=30,
                  angle=nextDirection-gyro.value(),
                  motor='ROBOT',
                  g=g, c=c)
-    # time.sleep(2)
 
     g,c = forward_until_line(v=20,
                      line_col = MIDPOINT,
                      desired_heading = nextDirection,
                      direction = direction,
                      g=g, c=c)
-    # time.sleep(2)
 
     g,c = turn_one_wheel(v=30,
                  angle=robot_forward_heading-gyro.value()+direction*10,
                  motor='ROBOT',
                  g=g, c=c)
-    # time.sleep(2)
 
     print('DIRECTION CHANGES {}'.format(-1*direction))
     return -1 * direction

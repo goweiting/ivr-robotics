@@ -91,6 +91,7 @@ while True:  # run for 10 seconds
     if col.value() > WHITE or io.btn.backspace:  # circuit breaker  ``
         L.stop()
         R.stop()
+        ev3.Sound.speak('I have finished following the line').wait()
         break
 
     err_vals += str(err) + ' '

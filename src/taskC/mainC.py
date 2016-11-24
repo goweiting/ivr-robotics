@@ -91,7 +91,6 @@ def main(MIDPOINT, robot_left, robot_right, robot_forward_heading):
     follow_until_dist(v=30,
                       desired_col=MIDPOINT,
                       desired_distance=100)
-    ev3.Sound.speak('ha ha ha ha ha').wait()
 
     logging.info('turning 90 degrees cw')
     turn_on_spot(v=30,
@@ -124,7 +123,6 @@ def main(MIDPOINT, robot_left, robot_right, robot_forward_heading):
                           g=g_subj)
             if y == 2:
                 ev3.Sound.speak('LINE FOUND').wait()
-                ev3.Sound.speak('robot right').wait()
                 break
             else:
                 # Move twice to cover the perpendicular edge of box
@@ -154,7 +152,6 @@ def main(MIDPOINT, robot_left, robot_right, robot_forward_heading):
                           g=g_subj)
             if y == 2:
                 ev3.Sound.speak('LINE FOUND').wait()
-                ev3.Sound.speak('robot forward heading').wait() # after block.. detect line and stops here
                 break
             else:
                 # Once edge found, turn 90 degrees
@@ -178,7 +175,6 @@ def main(MIDPOINT, robot_left, robot_right, robot_forward_heading):
                           g=g_subj)
             if y == 2:
                 ev3.Sound.speak('LINE FOUND').wait()
-                ev3.Sound.speak('robot left').wait()
                 break
             else:
                 #if no edge found; turn to face the front
@@ -192,7 +188,6 @@ def main(MIDPOINT, robot_left, robot_right, robot_forward_heading):
         else:
             break
 
-    ev3.Sound.speak('ok ok ok').wait()
     # # Return the robot to the original state
     # ev3.Sound.speak('current servo {}'.format(servo.position)).wait()
     # ev3.Sound.speak('angle {}'.format(servo_org-servo.position)).wait()
@@ -212,21 +207,14 @@ def main(MIDPOINT, robot_left, robot_right, robot_forward_heading):
 
 while True:
     if len(io.btn.buttons_pressed) > 0:
-        ev3.Sound.speak('WRITING FILES')
+        ev3.Sound.speak('WRITING FILES').wait()
         break
     ev3.Sound.speak('Beginning').wait()
     robot_left, robot_right, robot_forward_heading = main(MIDPOINT, robot_left, robot_right, robot_forward_heading) # do it recursively
     ev3.Sound.speak('Next Round next round').wait()
     time.sleep(2)
 
-# isGetVals =False
-# while not isGetVals:
-#     ev3.Sound.speak('Beginnning').wait()
-#     robot_left, robot_right, robot_forward_heading = main(MIDPOINT, robot_left, robot_right, robot_forward_heading) # do it recursively
-#     ev3.Sound.speak('Next Round').wait()
-#     time.sleep(2)
-#     isGetVals = True
-
+# writing recorded gyro values into file
 print('printing')
 g_vals = g_subj.get_history()
 print(g_vals)

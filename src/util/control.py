@@ -1,5 +1,5 @@
 from collections import deque
-
+import logging
 # Define a controller class that remembers the values and error
 
 
@@ -25,6 +25,7 @@ class Controller(object):
         self.ki = ki
         self.kd = kd
         self.desired = r
+        logging.info('Goal state is {}'.format(self.desired))
 
     def add(self, value):
         # Given the value from the system, comppute the error and store it

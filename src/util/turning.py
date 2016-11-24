@@ -37,38 +37,38 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
     # -------------- ROBOT ---------------------
     if motor == 'ROBOT':
         desired_angle = gyro.value() + angle
-        # ev3.Sound.speak(
-        #     'Turning robot to desired {} degrees'.format(desired_angle)).wait()
         logging.info(
             'Turning the robot to desired {} degrees'.format(desired_angle))
-        turn_control = Controller(.9, 0, 0.5,
+        turn_control = Controller(.01, 0, 0,
                                   desired_angle,
                                   history=10)
-        # L.duty_cycle_sp = direction * L.duty_cycle_sp
-        # R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
 
         while True:
 
             signal, err = turn_control.control_signal(gyro.value())
-            if abs(v+signal) >= 100: signal = 0; # if its too low, it doesnt move!
-            L.run_direct(duty_cycle_sp=(direction * (v + signal)))
-            R.run_direct(duty_cycle_sp=(-1 * direction * (v - signal)))
+
+
+            if abs(err) <= 5 or io.btn.backspace:  # tolerance
+                L.stop()
+                R.stop()
+                L.duty_cycle_sp = v
+                R.duty_cycle_sp = v
+                return
+
+            else:
+                # if too small or too large, just use the default v
+                if abs(v+signal) >= 100 or abs(v+signal) <= 20: signal = 0
+                L.run_direct(duty_cycle_sp=direction*abs(v+signal))
+                R.run_direct(duty_cycle_sp=-1*direction*abs(v+signal))
 
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
-                gyro.value(), signal, err, L.speed_sp, R.speed_sp))
+                gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
             try:
                 g.set_val(gyro.value())
                 c.set_val(col.value())
             except AttributeError:
                 pass
-            if abs(err) <= 2 or io.btn.backspace:  # tolerance
-                L.stop()
-                R.stop()
-                L.speed_sp = v
-                R.speed_sp = v
-                L.duty_cycle_sp = direction * L.duty_cycle_sp
-                R.duty_cycle_sp = -1 * direction * R.duty_cycle_sp
-                return
+
 
     # -------------- SERVO ---------------------
     elif motor == 'SERVO':
@@ -100,5 +100,64 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
                 servo.duty_cycle_sp = servo.duty_cycle_sp * \
                     direction  # return to the original number
                 return
+    else:
+        raise NameError('motor should be "ROBOT" or "SERVO"')
+
+
+
+def turn_one_wheel(v, angle, motor, g=None, c=None):
+    """
+    """
+
+    L = io.motA
+    R = io.motB
+    servo = io.servo
+    gyro = io.gyro
+    col = io.col
+
+    if angle > 0:
+        direction = 1  # set the polairty switch for the wheels
+    elif angle < 0:
+        direction = -1
+    else: # 0 degrees = no work to be done
+        return
+    print(direction)
+
+    # -------------- ROBOT ---------------------
+    if motor == 'ROBOT':
+        desired_angle = gyro.value() + angle
+        logging.info(
+            'Turning the robot to desired {} degrees'.format(desired_angle))
+        turn_control = Controller(.01, 0, 0,
+                                  desired_angle,
+                                  history=10)
+
+        while True:
+
+            signal, err = turn_control.control_signal(gyro.value())
+
+            if abs(err) <= 5 or io.btn.backspace:  # tolerance
+                L.stop()
+                R.stop()
+                L.duty_cycle_sp = v
+                R.duty_cycle_sp = v
+                return
+
+            else:
+                # if too small or too large, just use the default v
+                if abs(v+signal) >= 100 or abs(v+signal) <= 20: signal = 0
+                if direction == 1:
+                    L.run_direct(duty_cycle_sp=direction*abs(v+signal))
+                elif direction == -1:
+                    R.run_direct(duty_cycle_sp=-1*direction*abs(v+signal))
+
+            logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+            try:
+                g.set_val(gyro.value())
+                c.set_val(col.value())
+            except AttributeError:
+                pass
+
     else:
         raise NameError('motor should be "ROBOT" or "SERVO"')

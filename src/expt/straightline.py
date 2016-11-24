@@ -97,7 +97,7 @@ def run_experiment(speed_sp, kp, ki, kd, history, filename):
     f.write(err_vals)
     f.close()
 
-def sonar_experiment(duty_cycle, filename,time):
+def sonar_experiment(duty_cycle, filename, time):
     """
     duty -   the constant duty_cycle_sp
     kp      -   proportion constant

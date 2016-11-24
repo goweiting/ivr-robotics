@@ -95,150 +95,150 @@ def main():
 
     global MIDPOINT, gyro, col, L, R, robot_forward_heading, robot_left, robot_right
 
-    # # # --------------------------------------------------------------------
-    # # # FOLLOW THE LINE UNTIL IT FOUND AN OBJECT
-    # # # --------------------------------------------------------------------
-    # logging.info('-------------------RUNNING-------------------')
-    # logging.info('follow the line until object at desired_distance found')
+    # # --------------------------------------------------------------------
+    # # FOLLOW THE LINE UNTIL IT FOUND AN OBJECT
+    # # --------------------------------------------------------------------
+    logging.info('-------------------RUNNING-------------------')
+    logging.info('follow the line until object at desired_distance found')
     # -----------------------------------------------------
 
-    # # FINDING OBJECT
-    # follow_until_dist(v=30,
-    #                   desired_col=MIDPOINT,
-    #                   desired_distance=100,
-    #                   g=g)  # = 10 cm
-    # # time.sleep(3)
-    #
-    # # HEADING FORWARD
-    # logging.info('reference heading = \
-    #     {}'.format(robot_forward_heading))
-    # logging.info('turning 90 degrees cw')
-    # turn_on_spot(v=40,  # was 30
-    #              angle=robot_right - gyro.value(),
-    #              motor='ROBOT',
-    #              g=g)
-    # # time.sleep(2)
-    #
-    # logging.info('turn servo -90 degrees')
-    # turn_on_spot(v=45,  # was 45
-    #              angle=servo_left,
-    #              motor='SERVO',
-    #              g=g)
-    # # time.sleep(2)
-    #
-    # # ----->>>---------------------------------------------
-    # #  HEADING SIDEWAY
-    # logging.info('MOVING SIDEWAY')
-    # thresh = 40
-    # logging.info('Moving robot until threshold = \
-    #     {} is exceeded'.format(
-    #     thresh))  # once us detects surrounding more than 1.5cm away, halt
-    # move_in_range(v=30, # was 25
-    #               desired_angle=robot_right,
-    #               threshold=thresh,
-    #               g=g)
-    # # time.sleep(2)
-    #
-    # logging.info('Moving the robot tacho count = \
-    #     {} to maintain distance from object boundary'.format(
-    #     tacho_counts_to_travel))
-    # blind_forward(v=30,
-    #               tacho_counts=tacho_counts_to_travel,
-    #               expected_heading=robot_right,
-    #               g=g)
-    # # time.sleep(2)
-    #
-    # logging.info('Turning ROBOT CCW')
-    # turn_on_spot(v=40,
-    #              angle=robot_forward_heading - gyro.value(),
-    #              motor='ROBOT',
-    #              g=g)
-    # # time.sleep(2)
-    #
-    # # --------------------------------------------------------
-    # # HEADING FORWARD
-    # logging.info('Moving the robot tacho count = \
-    #     {} for object to be in range'.format(
-    #     tacho_counts_to_travel))
-    # blind_forward(v=30,
-    #               tacho_counts=tacho_counts_to_travel,
-    #               expected_heading=robot_forward_heading,
-    #               g=g)
-    # # time.sleep(2)
-    #
-    # logging.info('Moving forward until edge is found')
-    # move_in_range(v=30,# was 25
-    #               desired_angle=robot_forward_heading,
-    #               threshold=thresh,
-    #               g=g)
-    # # time.sleep(2)
-    #
-    # logging.info('Moving the robot tacho count = \
-    #     {} for object to be away from the object'.format(
-    #     tacho_counts_to_travel))
-    # tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 38
-    # blind_forward(v=30, # was 25
-    #               tacho_counts=tacho_to_cover_robot_body,
-    #               expected_heading=robot_forward_heading,
-    #               g=g)
-    # # time.sleep(2)
-    #
-    # # -----<<<<---------------------------------------------
-    # # HEADING SIDEWAY
-    # logging.info('turning the ROBOT CCW by \
-    #     {}'.format(robot_left - gyro.value()))
-    # turn_on_spot(v=40,
-    #              angle=(robot_left - gyro.value()),
-    #              motor='ROBOT',
-    #              g=g)
-    # # time.sleep(2)
-    #
-    # # move extra tacho counts
-    # logging.info('Moving the robot tacho count = \
-    #     {} for object to be in range'.format(
-    #     tacho_counts_to_travel))
-    # blind_forward(v=30,
-    #               tacho_counts=tacho_counts_to_travel,
-    #               expected_heading=robot_left,
-    #               g=g)
-    # # time.sleep(2)
-    # # until edge is found
-    # logging.info('Moving forward until edge is found')
-    # move_in_range(v=30, # was 25
-    #               desired_angle=robot_left,
-    #               threshold=thresh,
-    #               g=g)
-    # # time.sleep(2)
-    #
-    # # ------------------------------------------------------
-    # tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 38
-    # logging.info('Moving forward before turning')
-    # blind_forward(v=30,
-    #               tacho_counts=tacho_to_cover_robot_body,
-    #               expected_heading=robot_left,
-    #               g=g)
-    # # time.sleep(2)
-    # # 180 degrees turn
-    # logging.info('Turning the robot CW by  \
-    #     {}'.format(robot_right - gyro.value()))
-    # turn_on_spot(v=40,
-    #              angle=robot_right - gyro.value(),
-    #              motor='ROBOT',
-    #              g=g)
-    # # time.sleep(2)
-    # forward_until_line(v=30,
-    #                    line_col=MIDPOINT,
-    #                    desired_heading=robot_left,
-    #                    g=g)
-    # turn_on_spot(v=45,
-    #              angle=servo_org,
-    #              motor='SERVO',
-    #              g=g)
-    #
-    # follow_until_dist(v=30,
-    #                   desired_col=MIDPOINT,
-    #                   desired_distance=100,
-    #                   g=g)  # = 10 cm
+    # FINDING OBJECT
+    follow_until_dist(v=30,
+                      desired_col=MIDPOINT,
+                      desired_distance=100,
+                      g=g)  # = 10 cm
+    # time.sleep(3)
+
+    # HEADING FORWARD
+    logging.info('reference heading = \
+        {}'.format(robot_forward_heading))
+    logging.info('turning 90 degrees cw')
+    turn_on_spot(v=40,  # was 30
+                 angle=robot_right - gyro.value(),
+                 motor='ROBOT',
+                 g=g)
+    # time.sleep(2)
+
+    logging.info('turn servo -90 degrees')
+    turn_on_spot(v=45,  # was 45
+                 angle=servo_left,
+                 motor='SERVO',
+                 g=g)
+    # time.sleep(2)
+
+    # ----->>>---------------------------------------------
+    #  HEADING SIDEWAY
+    logging.info('MOVING SIDEWAY')
+    thresh = 40
+    logging.info('Moving robot until threshold = \
+        {} is exceeded'.format(
+        thresh))  # once us detects surrounding more than 1.5cm away, halt
+    move_in_range(v=30, # was 25
+                  desired_angle=robot_right,
+                  threshold=thresh,
+                  g=g)
+    # time.sleep(2)
+
+    logging.info('Moving the robot tacho count = \
+        {} to maintain distance from object boundary'.format(
+        tacho_counts_to_travel))
+    blind_forward(v=30,
+                  tacho_counts=tacho_counts_to_travel,
+                  expected_heading=robot_right,
+                  g=g)
+    # time.sleep(2)
+
+    logging.info('Turning ROBOT CCW')
+    turn_on_spot(v=40,
+                 angle=robot_forward_heading - gyro.value(),
+                 motor='ROBOT',
+                 g=g)
+    # time.sleep(2)
+
+    # --------------------------------------------------------
+    # HEADING FORWARD
+    logging.info('Moving the robot tacho count = \
+        {} for object to be in range'.format(
+        tacho_counts_to_travel))
+    blind_forward(v=30,
+                  tacho_counts=tacho_counts_to_travel,
+                  expected_heading=robot_forward_heading,
+                  g=g)
+    # time.sleep(2)
+
+    logging.info('Moving forward until edge is found')
+    move_in_range(v=30,# was 25
+                  desired_angle=robot_forward_heading,
+                  threshold=thresh,
+                  g=g)
+    # time.sleep(2)
+
+    logging.info('Moving the robot tacho count = \
+        {} for object to be away from the object'.format(
+        tacho_counts_to_travel))
+    tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 38
+    blind_forward(v=30, # was 25
+                  tacho_counts=tacho_to_cover_robot_body,
+                  expected_heading=robot_forward_heading,
+                  g=g)
+    # time.sleep(2)
+
+    # -----<<<<---------------------------------------------
+    # HEADING SIDEWAY
+    logging.info('turning the ROBOT CCW by \
+        {}'.format(robot_left - gyro.value()))
+    turn_on_spot(v=40,
+                 angle=(robot_left - gyro.value()),
+                 motor='ROBOT',
+                 g=g)
+    # time.sleep(2)
+
+    # move extra tacho counts
+    logging.info('Moving the robot tacho count = \
+        {} for object to be in range'.format(
+        tacho_counts_to_travel))
+    blind_forward(v=30,
+                  tacho_counts=tacho_counts_to_travel,
+                  expected_heading=robot_left,
+                  g=g)
+    # time.sleep(2)
+    # until edge is found
+    logging.info('Moving forward until edge is found')
+    move_in_range(v=30, # was 25
+                  desired_angle=robot_left,
+                  threshold=thresh,
+                  g=g)
+    # time.sleep(2)
+
+    # ------------------------------------------------------
+    tacho_to_cover_robot_body = robot.get_tacho_counts(30) * 38
+    logging.info('Moving forward before turning')
+    blind_forward(v=30,
+                  tacho_counts=tacho_to_cover_robot_body,
+                  expected_heading=robot_left,
+                  g=g)
+    # time.sleep(2)
+    # 180 degrees turn
+    logging.info('Turning the robot CW by  \
+        {}'.format(robot_right - gyro.value()))
+    turn_on_spot(v=40,
+                 angle=robot_right - gyro.value(),
+                 motor='ROBOT',
+                 g=g)
+    # time.sleep(2)
+    forward_until_line(v=30,
+                       line_col=MIDPOINT,
+                       desired_heading=robot_left,
+                       g=g)
+    turn_on_spot(v=45,
+                 angle=servo_org,
+                 motor='SERVO',
+                 g=g)
+
+    follow_until_dist(v=30,
+                      desired_col=MIDPOINT,
+                      desired_distance=100,
+                      g=g)  # = 10 cm
 
     ev3.Sound.speak('HELLO').wait()
     turn_on_spot(v=45,

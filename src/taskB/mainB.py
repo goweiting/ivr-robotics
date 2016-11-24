@@ -1,116 +1,135 @@
 #! /usr/bin/env python
 
-# python import
 import time
 import logging
+import math
 
 # local import
 import ev3dev.ev3 as ev3
-import util.io as io
-import helper as helper
+import util.robotio as io
+from helper import *
+from util.turning import turn_on_spot, turn_one_wheel
+
+logging.basicConfig(format='%(levelname)s: %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    level=logging.INFO)
 
 # global vars
 L = io.motA
 R = io.motB
-L.speed_sp=40
-R.speed_sp=40
+L.reset()
+R.reset()
+L.speed_sp = 20
+R.speed_sp = 20
+L.duty_cycle_sp = 20
+R.duty_cycle_sp = 20
+
 gyro = io.gyro
 col = io.col
-
-# MOTOR:
-L.connected
-R.connected
-L.reset()  # reset the settings
-R.reset()
-L.speed_sp = 40
-R.speed_sp = 40
-
 # SENSORS
 col.connected
 col.mode = 'COL-REFLECT'
 
-ev3.Sound.speak('Calibrate gyro').wait()
-time.sleep(10) # reset gyro
-gyro.connected
-gyro.mode = 'GYRO-CAL'
-time.sleep(10) # reset the gyro
-gyro.mode = 'GYRO-ANG'
+# --------------------------------------------------------------------
+# CALIBRATION
+# --------------------------------------------------------------------
+ev3.Sound.speak('hello').wait()
 
-# ------------------------------
-# Obtain BLACK and WHITE values
-# ------------------------------
-# ev3.Sound.speak('black').wait()
-# BLACK = col.value()
-# while not io.btn.backspace:
-#     BLACK = col.value()
-#     print BLACK
+logging.info('-------------------CALIBRATION-------------------')
+ev3.Sound.speak('Calibrating, MIDPOINT').wait()
+while True:
+    if io.btn.enter:
+        MIDPOINT = col.value()
+        ev3.Sound.speak('Done').wait()
+        print('MIDPOINT = {}'.format(MIDPOINT))
+        break
+logging.info('MIDPOINT = {}'.format(MIDPOINT))
+(robot_forward_heading, robot_left, robot_right) = \
+    calibrate_gyro()
 
-ev3.Sound.speak('white').wait()
-WHITE = col.value()
+if gyro.value() != robot_forward_heading:
+    ev3.Sound.speak('Calibration Error').wait()
+    (robot_forward_heading, robot_left, robot_right) = calibrate_gyro()
+
+# --------------------------------------------------------------------
+# Getting raw values:
+# -------------------------------------------------------------------
+# For plotting graphs
+g = Subject('gyro vals')
+c = Subject('col vals')
+
+
+def main(direction, g, c):
+    """
+    """
+    global MIDPOINT, gyro, robot_right, robot_left, robot_forward_heading
+
+    if direction == 1:  # left
+        ev3.Sound.speak('Following line on my left').wait()
+        logging.info('Following line on left')
+        nextDirection = robot_right
+    elif direction == -1:  # right
+        ev3.Sound.speak('Following line on my right').wait()
+        logging.info('Following line on right')
+        nextDirection = robot_left
+
+
+    follow_line(v=20,
+               direction=direction,
+               midpoint=MIDPOINT,
+               stop_col=MIDPOINT+30,
+               history=1,
+               g=g, c=c)
+    time.sleep(2)
+
+     # how much to turn to reach nextDirection
+    # turn_on_spot(v=30,
+    #              angle=nextDirection-gyro.value(),
+    #              motor='ROBOT',
+    #              g=g, c=c)
+    # time.sleep(2)
+    turn_one_wheel(v=30,
+                 angle=nextDirection-gyro.value(),
+                 motor='ROBOT',
+                 g=g, c=c)
+    time.sleep(2)
+
+    forward_until_line(v=20,
+                     line_col = MIDPOINT,
+                     desired_heading = nextDirection,
+                     direction = direction,
+                     g=g, c=c)
+    time.sleep(2)
+
+    # turn_on_spot(v=30,
+    #                 angle=(robot_forward_heading-gyro.value())/4,
+    #                 motor='ROBOT',
+    #                 g=g, c=c)
+    # time.sleep(2)
+    turn_one_wheel(v=30,
+                 angle=robot_forward_heading-gyro.value()+direction*10,
+                 motor='ROBOT',
+                 g=g, c=c)
+    time.sleep(2)
+
+    print('DIRECTION CHANGES {}'.format(-1*direction))
+    return -1 * direction
+
+
+# RUNNING
+current = 1
+# assume starting on left, might want to make it netural such as
+# requesting user for input
 while not io.btn.backspace:
-    WHITE = col.value()
-    print WHITE
+    current = main(current,g,c) # do it recursively
+    continue
 
-# ------------------------------
-# Obtain MITPOINT
-# ------------------------------
-ev3.Sound.speak('midpoint').wait()
-MIDPOINT = col.value()
-while not io.btn.backspace:
-    MIDPOINT = col.value()
-    print MIDPOINT
-time.sleep(1)
-
-# ------------------------------
-# Obtain desired angle
-# ------------------------------
-ev3.Sound.speak('straight').wait() # to maintain the angle
-ANGLE = gyro.value()
-while not io.btn.backspace:
-    ANGLE = gyro.value()
-    # print ANGLE
-ev3.Sound.speak('ok').wait()
-
-# set attributes
-MIDPOINT = 10
-WHITE = MIDPOINT + 30 # TODO: adjust this
-RIGHT90 = ANGLE + 80 # TODO: adjust this
-LEFT90 = ANGLE - 80
-FIXCW = 30 # TODO: adjust this
-FIXCCW = -30
-v = 30
-
-# -----------------------------
-# START
-# ----------------------------
-logging.info('-------------------RUNNING-------------------')
-
-ev3.Sound.speak('start').wait()
-time.sleep(1)
-while not io.btn.backspace:
-
-    # logging.info('follow left line')
-    helper.follow_left_line_till_end(v=25, midpoint=MIDPOINT, desired_col=WHITE)
-
-    # logging.info('rotate to right')
-    helper.rotate(v=25, desired_gyro_val=RIGHT90)
-
-    # logging.info('find line on right side')
-    helper.find_line(v=25, desired_col=MIDPOINT)
-
-    # logging.info('fix position on right line')
-    helper.fix_position(v=20, desired_fix_angle=FIXCCW, desired_col=MIDPOINT)
-    #
-    # logging.info('follow right line')
-    helper.follow_right_line_till_end(v=25, midpoint=MIDPOINT, desired_col=WHITE)
-    #
-    # logging.info('rotate to left')
-    helper.rotate(v=25, desired_gyro_val=LEFT90)
-    #
-    # logging.info('find line on left side')
-    helper.find_line(v=25, desired_col=MIDPOINT)
-    #
-    # logging.info('fix position on left line')
-    helper.fix_position(v=20, desired_fix_angle=FIXCW, desired_col=MIDPOINT)
-
-logging.info('--------------------FINISH---------------------')
+# Write the values into file
+g_vals = g.get_history();
+c_vals = c.get_history()
+file_gyro = open('./vals/gyro_val.txt', 'a')
+file_col = open('./vals/col_val.txt', 'a')
+file_col.write(' '.join(c_vals))
+file_gyro.write(' '.join(g_vals))
+file_gyro.close()
+file_col.close()

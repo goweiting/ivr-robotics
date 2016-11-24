@@ -114,7 +114,8 @@ def forward_until_line(v, line_col, desired_heading, direction, g=None, c=None):
                 L.run_direct(duty_cycle_sp=v)
                 R.run_direct(duty_cycle_sp=v)
 
-            logging.info('GYRO = {},COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(gyro.value(), col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+            logging.info('GYRO = {},COL = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                gyro.value(), col.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
             g.set_val(gyro.value())
             c.set_val(col.value())
 

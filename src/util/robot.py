@@ -27,7 +27,7 @@ class Robot(object):
         self.duty_cycle_sp = 0
         self.position = (self.x, self.y, self.yaw)
 
-    def goto(self, dx, dy, dyaw):
+    def goto(self, duty, dx, dy, dyaw):
         """
         OPEN LOOP CONTROL
         Given a goal - [dx, dy, dyaw]
@@ -39,14 +39,19 @@ class Robot(object):
         global L, R, gyro
 
         # 1) Rotate robot:
+        turn_on_spot(v=duty, angle=dyaw, motor='ROBOT')
 
         # 2) calculate required_distance
         required_distance = pythagoras(dx, dy)
-        required_tacho_counts = self.get_tacho_counts()
+        required_tacho_counts = self.get_tacho_counts(duty)
+
         # 3) move forward
+        while L.position <= required_tacho_counts:
+            L.run_direct(duty_cycle_sp=duty)
+            R.run_direct(duty_cycle_sp=duty)
 
-        # 4) check state
-
+        return True
+        
     def get_tacho_counts(self, duty_cycle_sp):
         """
         Returns the number of tacho counts need to complete given distance

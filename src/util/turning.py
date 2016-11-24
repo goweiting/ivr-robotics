@@ -48,6 +48,9 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
             signal, err = turn_control.control_signal(gyro.value())
 
 
+            signal, err = turn_control.control_signal(gyro.value())
+
+
             if abs(err) <= 5 or io.btn.backspace:  # tolerance
                 L.stop()
                 R.stop()
@@ -82,10 +85,15 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
         while True:
 
             signal, err = turn_control.control_signal(servo.position)
-            if (v + abs(signal) >= 100):
-                signal = 0
+            if abs(err) <= 4 or io.btn.backspace:  # tolerance
+                servo.stop()
+                servo.speed_sp = v
+                servo.duty_cycle_sp = servo.duty_cycle_sp * \
+                    direction  # return to the original number
+                return
+
+            if (v + abs(signal) >= 100): signal = 0
             signal = (direction)*(v + abs(signal))
-            print(signal)
             servo.run_direct(duty_cycle_sp=signal)
             logging.info('POS = {},\tcontrol = {},\t err={}, \tspd = {}'.format(
                 servo.position, signal, err, servo.speed_sp))
@@ -93,13 +101,6 @@ def turn_on_spot(v, angle, motor, g=None, c=None):
                 g.set_val(gyro.value())
             except AttributeError:
                 pass
-
-            if abs(err) <= 4 or io.btn.backspace:  # tolerance
-                servo.stop()
-                servo.speed_sp = v
-                servo.duty_cycle_sp = servo.duty_cycle_sp * \
-                    direction  # return to the original number
-                return
     else:
         raise NameError('motor should be "ROBOT" or "SERVO"')
 

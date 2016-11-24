@@ -1,12 +1,4 @@
-"""
-Functions used for taskC
-follow_until_dist
-follow_until_line
-move_in_range
-blind_forward
-"""
-
-# imports
+ # imports
 import logging
 import time
 import math
@@ -41,12 +33,10 @@ def follow_until_dist(v, desired_col, desired_distance, g=None):
     ev3.Sound.speak(
         'Following black line until sonar sensor {}'.format(desired_distance)).wait()
     # defines the line control so that the motor follows the line
-    # TODO: need to tune this!
     line_control = Controller(.5, 0, 0.01,
                               desired_col,
-                              history=10)  # a P controller
+                              history=10)  # a PD controller
     distance_subject = Subject('distance_subject')
-    # distance_to_record = int(desired_distance*1.5) #TODO:try 1.5???
     halt_ = Listener('halt_', distance_subject,
                      desired_distance, 'LT')  # halt when LT desired_distance
 
@@ -61,17 +51,23 @@ def follow_until_dist(v, desired_col, desired_distance, g=None):
             logging.info('STOP!')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
-            return
+            return g
 
         else:  # havent reach yet, continnue following the line
             signal, err = line_control.control_signal(col.value())
             if (abs(v + signal) > 100):
                 signal = 0
+            # folow the outside of the line
             L.run_direct(duty_cycle_sp=v + signal)
             R.run_direct(duty_cycle_sp=v - signal)
 
+            logging.info('US = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                us.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
             # For monitoring
-            g.set_val(gyro.value())
+            try:
+                g.set_val(gyro.value())
+            except AttributeError:
+                pass
 # ====================================================================
 
 
@@ -92,7 +88,6 @@ def forward_until_line(v, line_col, desired_heading, g=None):
     ev3.Sound.speak(
         'Moving forward until line is found. Col is {}'.format(line_col)).wait()
 
-    # TODO: need to tune this!
     gyro_control = Controller(.8, 0, 0.05,
                               desired_heading,
                               history=10)  # a P controller
@@ -107,15 +102,16 @@ def forward_until_line(v, line_col, desired_heading, g=None):
             L.stop()
             R.stop()
             ev3.Sound.speak('Line detcted. hurray!').wait()
-            logging.info('STOP!')
+            logging.info('Line found')
             L.duty_cycle_sp = v
             R.duty_cycle_sp = v
-            return
+            return g
 
-        else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
+        else:
             signal, err = gyro_control.control_signal(gyro.value())
-            if (abs(v + signal) > 100):
-                signal = 0
+
+            if (abs(v + signal) > 100): signal = 0
+
             if err > 0:
                 L.run_direct(duty_cycle_sp=v + signal)
                 R.run_direct(duty_cycle_sp=v - signal)
@@ -128,12 +124,14 @@ def forward_until_line(v, line_col, desired_heading, g=None):
 
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
                 gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-            g.set_val(gyro.value())
+            try:
+                g.set_val(gyro.value())
+            except AttributeError:
+                pass
 
 # ====================================================================
 
-
-def move_in_range(v, desired_angle, threshold, g=None):
+def move_in_range(v, desired_angle, threshold, col_threshold, g=None):
     """
     The goal is to move along the boundary of the object
     The boundary of the object is defined by the :param desired_range. Hence
@@ -143,54 +141,91 @@ def move_in_range(v, desired_angle, threshold, g=None):
     to guide the movement of the robot, ensuring it moves parallel to the  object
     """
 
-    global L, R, us, gyro
-    # ev3.Sound.speak(
-        # 'Tracing the object. Stop at threshold of {}'.format(threshold)).wait()
+    global L, R, us, gyro, col
+    ev3.Sound.speak(
+        'Tracing the object. Stop at threshold of {}'.format(
+        threshold)).wait()
     logging.info('Tracing the object. Stop at threshold of \
         {}'.format(threshold))
 
     initial_range = us.value()  # get the current range
     threshold_subject = Subject('threshold_subject')
     # halt if the value is greater than threshold
+    col_subject = Subject('col subject')
     halt_ = Listener('halt_', threshold_subject,
                      threshold, 'GT')
+    col_halt = Listener('line detector', col_subject,
+                        col_threshold, 'LT')
 
     # maintain facing the desired angle
     desired_angle_control = Controller(.7, 0, 0.04,
                                        desired_angle,
                                        history=10)
-    time.sleep(2)
+
+    # Use the current US value as the range to maintain
+    desired_range = Controller(.01,0,0,
+                                us.value(),
+                                history=1)
 
     while True:
-        # update with the difference
+        # update with the difference in values
         threshold_subject.set_val(us.value() - initial_range)
-        if halt_.get_state() or io.btn.backspace:
+        col_subject.set_val(col.value())
+        if col_halt.get_state():
+            L.stop()
+            R.stop()
+            ev3.Sound.speak('LINE detected').wait()
+            logging.info('LINE detected!')
+            L.duty_cycle_sp = v  # reset the value
+            R.duty_cycle_sp = v
+            return 2
+        elif halt_.get_state()  or io.btn.backspace:
             # move forward x distance when out of range value is detected
             L.stop()
             R.stop()
-            L.duty_cycle_sp = v  # reset the value
-            R.duty_cycle_sp = v
             ev3.Sound.speak('Edge detected').wait()
             logging.info('Edge detected!')
-            return
+            L.duty_cycle_sp = v  # reset the value
+            R.duty_cycle_sp = v
+            return 1
 
-        else:  # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
-            signal, err = desired_angle_control.control_signal(gyro.value())
-            if (abs(v + signal) > 100):
-                signal = 0
-            if err > 0:  # current angle is greater than wanted - need to turn left to get closer
-                L.run_direct(duty_cycle_sp=v - abs(signal))
-                R.run_direct(duty_cycle_sp=v + abs(signal))
-            elif err < 0:  # current angle is less than wanted- need to turn right to get closer
-                L.run_direct(duty_cycle_sp=v + abs(signal))
-                R.run_direct(duty_cycle_sp=v - abs(signal))
+        else:
+            # when out of range value is not reached yet- keep tracing the object and adjusting to maintain desired_range
+            # signal, err = desired_angle_control.control_signal(gyro.value())
+            # if (abs(v + signal) > 100):
+            #     signal = 0
+            # if err > 0:  # current angle is greater than wanted - need to turn left to get closer
+            #     L.run_direct(duty_cycle_sp=v - abs(signal))
+            #     R.run_direct(duty_cycle_sp=v + abs(signal))
+            # elif err < 0:  # current angle is less than wanted- need to turn right to get closer
+            #     L.run_direct(duty_cycle_sp=v + abs(signal))
+            #     R.run_direct(duty_cycle_sp=v - abs(signal))
+            # else:
+            #     L.run_direct(duty_cycle_sp=v)
+            #     R.run_direct(duty_cycle_sp=v)
+
+            # Trying a US implementation:
+            signal, err = desired_range.control_signal(us.value())
+            # if current value is less than the expected distance, we will get a
+            # negative err
+            if err > 0:
+                L.run_direct(duty_cycle_sp = v + signal)
+                R.run_direct(duty_cycle_sp = v - signal)
+            elif err < 0:
+                L.run_direct(duty_cycle_sp = v - signal)
+                R.run_direct(duty_cycle_sp = v + signal)
             else:
-                L.run_direct(duty_cycle_sp=v)
-                R.run_direct(duty_cycle_sp=v)
+                R.run_direct(duty_cycle_sp = v)
+                L.run_direct(duty_cycle_sp = v)
 
             logging.info('GYRO = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
                 gyro.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
-            g.set_val(gyro.value())
+            logging.info('US = {},\tcontrol = {},\t err={}, \tL = {}, \tR = {}'.format(
+                us.value(), signal, err, L.duty_cycle_sp, R.duty_cycle_sp))
+            try:
+                g.set_val(gyro.value())
+            except AttributeError:
+                pass
 
 
 # ====================================================================
@@ -206,20 +241,9 @@ def blind_forward(v, tacho_counts, expected_heading, g=None):
     :param expected_heading  - hte expected gyro value that the robot should move in
     """
 
-    global L, R, gyro
+    global L, R, gyro, col
 
-    current_heading = gyro.value(0)
-    # ev3.Sound.speak('My current heading is {}.'.format(current_heading)).wait()
-    # discount = expected_heading - current_heading
-    # if abs(discount) >= 5:
-    #     ev3.Sound.speak('I need to turn {} degrees'.format(discount)).wait()
-        # turn_on_spot(v=30, angle=discount, motor='ROBOT', g=g)
-    #     time.sleep(2)  # wait
-
-    # execute moving forward:
-    # ev3.Sound.speak('I will travel tacho counts of {}'.format(
-        # abs(tacho_counts))).wait()
-    logging
+    current_heading = gyro.value()
     L.reset()
     R.reset()
     time.sleep(3)
@@ -229,7 +253,12 @@ def blind_forward(v, tacho_counts, expected_heading, g=None):
     L.run_to_abs_pos(duty_cycle_sp=v, position_sp=L_tacho_counts)
     R.run_to_abs_pos(duty_cycle_sp=v, position_sp=R_tacho_counts)
     logging.info('L = {}, \tR = {}'.format(L.position, R.position))
-    g.set_val(gyro.value())
+    try:
+        g.set_val(gyro.value())
+    except AttributeError:
+        pass
+    return
+
 
 # ====================================================================
 

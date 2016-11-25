@@ -15,7 +15,7 @@ import logging
 
 # local import
 import ev3dev.ev3 as ev3
-import util.io as io
+import util.robotio as io
 from util.control import Controller
 
 logging.basicConfig(format='%(levelname)s: %(message)s',
@@ -81,7 +81,7 @@ f = open('vals.txt', 'w')
 g = open('gyro.txt', 'w')
 
 v = 20  # constant duty_cycle_sp
-while True: 
+while True:
 
     signal, err = control.control_signal(col.value())
     if abs(v+signal) >= 100:  signal = 0 # prevent overflow

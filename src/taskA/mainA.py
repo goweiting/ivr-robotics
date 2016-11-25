@@ -81,7 +81,7 @@ f = open('vals.txt', 'w')
 g = open('gyro.txt', 'w')
 
 v = 20  # constant duty_cycle_sp
-while True:  # run for 10 seconds
+while True: 
 
     signal, err = control.control_signal(col.value())
     if abs(v+signal) >= 100:  signal = 0 # prevent overflow

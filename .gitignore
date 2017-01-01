@@ -1,7 +1,9 @@
-misc/custom
 ev3dev-lang-python
-misc/ivr_robotics
-
+misc
+graph
+report
+submission
+original
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
